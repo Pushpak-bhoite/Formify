@@ -13,15 +13,19 @@ const formSchema = new mongoose.Schema({
   description: {
     type: String,
   },
-  fields: [
+  questions: [
     {
       type: {
         type: String, // e.g., 'text', 'checkbox', 'dropdown'
         required: true,
       },
-      label: {
-        type: String, // e.g., 'Name', 'Hobbies'
-        required: true,
+      // label: {
+      //   type: String, // e.g., 'Name', 'Hobbies'
+      //   required: true,
+      // },
+      question:{
+        type:String,
+        required: true
       },
       options: {
         type: [String], // Only for fields like 'checkbox' or 'dropdown'
@@ -32,11 +36,6 @@ const formSchema = new mongoose.Schema({
       },
     },
   ],
-  formLink: {
-    type: String, // The unique link for the form (e.g., `/forms/:formId`)
-    required: true,
-    unique: true,
-  },
   createdAt: {
     type: Date,
     default: Date.now,

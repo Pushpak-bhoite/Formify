@@ -6,6 +6,7 @@ import Home from './pages/CreateForm'
 import SignupForm from './pages/SignUp'
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import SignInForm from './pages/SignIn'
+import ViewForm from './pages/ViewForm'
 
 function App() {
   const [count, setCount] = useState(0)
@@ -18,6 +19,7 @@ function App() {
             <Route path="/" element={<Home />} />
             <Route path="/sign-in" element={<SignInForm />} />
             <Route path="/sign-up" element={<SignupForm />} />
+            <Route path="/forms/:formId" element={<ViewForm />} />
           </Routes>
         </div>
       </BrowserRouter>
