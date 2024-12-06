@@ -1,5 +1,3 @@
-'use client'
-
 import { useEffect, useState } from 'react'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -29,8 +27,9 @@ export default function ViewForm() {
     const [formDescription, setFormDescription] = useState('')
     const [questions, setQuestions] = useState([])
     const [formLink, setFormLink] = useState('')
+    const [formData, setFormData] = useState('')
+
     const param = useParams();
-    console.log('param?.formId', param?.formId)
     const addQuestion = () => {
         setQuestions([...questions, { type: 'text', question: '', options: [], required: false }])
     }
@@ -39,10 +38,12 @@ export default function ViewForm() {
         async function getFormData() {
 
             const response = await axios.get(`http://localhost:3000/forms/${param?.formId}`)
+            setFormData(response?.data?.form)
+            setQuestions(response?.data?.form.questions)
             console.log('response', response)
         }
         getFormData();
-    })
+    },[])
 
 
     const updateQuestion = (index, field, value) => {
@@ -100,41 +101,26 @@ export default function ViewForm() {
         }
     }
 
-    const copyToClipboard = async () => {
-        try {
-            await navigator.clipboard.writeText(formLink)
-            toast({
-                title: "Copied!",
-                description: "URL has been copied to clipboard.",
-            })
-        } catch (err) {
-            toast({
-                title: "Failed to copy",
-                description: "Something went wrong while copying the URL.",
-                variant: "destructive",
-            })
-        }
-    }
-
     console.log('questions ->', questions)
 
     const renderQuestionOptions = (question, index) => {
         switch (question.type) {
             case 'text':
-                return <Input disabled placeholder="Text answer" />
+                return <Input  placeholder="Text answer" />
             case 'checkbox':
                 return (
                     <div className="space-y-2">
                         {question.options.map((option, optionIndex) => (
                             <div key={optionIndex} className="flex items-center space-x-2">
                                 {(
-                                    <Checkbox id={`q${index}-option-${optionIndex}`} disabled />
+                                    <Checkbox id={`q${index}-option-${optionIndex}`}  />
                                 )}
-                                <Input
+                                {/* <Input
                                     value={option}
                                     onChange={(e) => updateOption(index, optionIndex, e.target.value)}
                                     placeholder={`Option ${optionIndex + 1}`}
-                                />
+                                /> */}
+                                <p>{option}</p>
                             </div>
                         ))}
                         <Button onClick={() => addOption(index)}>Add Option</Button>
@@ -146,24 +132,24 @@ export default function ViewForm() {
                         <RadioGroup>
                             {question.options.map((option, optionIndex) => (
                                 <div key={optionIndex} className="flex items-center space-x-2">
-                                    <RadioGroupItem value={option} id={`q${index}-option-${optionIndex}`} disabled />
-                                    <Input
+                                    <RadioGroupItem value={option} id={`q${index}-option-${optionIndex}`}  />
+                                    {/* <Input
                                         value={option}
                                         onChange={(e) => updateOption(index, optionIndex, e.target.value)}
                                         placeholder={`Option ${optionIndex + 1}`}
-                                    />
+                                    /> */}
+                                    <p>{option}</p>
                                 </div>
                             ))}
                         </RadioGroup>
-                        <Button onClick={() => addOption(index)}>Add Option</Button>
                     </div>
                 )
             case 'fileUpload':
-                return <Input type="file" disabled />
+                return <Input type="file" />
             case 'dropdown':
                 return (
                     <div className="space-y-2">
-                        <Select disabled>
+                        <Select >
                             <SelectTrigger>
                                 <SelectValue placeholder="Select an option" />
                             </SelectTrigger>
@@ -183,7 +169,6 @@ export default function ViewForm() {
                                 placeholder={`Option ${optionIndex + 1}`}
                             />
                         ))}
-                        <Button onClick={() => addOption(index)}>Add Option</Button>
                     </div>
                 )
             default:
@@ -193,34 +178,15 @@ export default function ViewForm() {
 
     return (
         <div className='w-screen min-h-screen pt-5 bg-orange-100'>
-
-            <div className='flex md:w-3/5 mx-auto mb-3 space-x-2 mb-4"'>
-                <Input value={formLink} readOnly placeholder="Generated URL will appear here" />
-                <Button onClick={() => copyToClipboard()} disabled={!formLink}>
-                    <Copy className="mr-2 h-4 w-4" />
-                    Copy
-                </Button>
-            </div>
             <div className="container md:w-3/5 bg-orange-600 mx-auto p-4 rounded-md">
 
                 <h1 className="text-2xl font-bold mb-4">Create a New Form</h1>
                 <Card>
                     <CardHeader>
-                        <CardTitle>Form Details</CardTitle>
+                            <h2> {formData?.title}</h2>
                     </CardHeader>
                     <CardContent>
-                        <div className="space-y-4">
-                            <Input
-                                placeholder="Form Title"
-                                value={formTitle}
-                                onChange={(e) => setFormTitle(e.target.value)}
-                            />
-                            <Textarea
-                                placeholder="Form Description"
-                                value={formDescription}
-                                onChange={(e) => setFormDescription(e.target.value)}
-                            />
-                        </div>
+                       <h3>{formData?.description}</h3>
                     </CardContent>
                 </Card>
 
@@ -230,26 +196,8 @@ export default function ViewForm() {
                         <Card key={index} className="mb-4 py-4">
                             <CardContent className="space-y-4">
                                 {/* select question type */}
-                                <Select
-                                    value={question.type}
-                                    onValueChange={(value) => updateQuestion(index, 'type', value)}
-                                >
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Select question type" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {questionTypes.map((type) => (
-                                            <SelectItem key={type.value} value={type.value}>
-                                                {type.label}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                                <Input
-                                    placeholder="Question"
-                                    value={question.question}
-                                    onChange={(e) => updateQuestion(index, 'question', e.target.value)}
-                                />
+                               <p>{question?.question}</p>
+                                 
                                 {renderQuestionOptions(question, index)}
 
                                 <div className='flex flex-row-reverse items-center  gap-4 '>
