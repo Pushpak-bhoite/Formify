@@ -32,8 +32,8 @@ export default function SignInForm() {
       const response = await axios.post("http://localhost:3000/auth/sign-in", formData)
       console.log('response', response)
       if(response.status === 200 ){
-        navigate('/');
-        localStorage.setItem(JSON.stringify(response.data))
+        navigate(`/user-forms/${response?.data?.user?._id}`);
+        localStorage.setItem('userId',response?.data?.user?._id)
       }
       toast({
         title: "Sign-In Successful.",

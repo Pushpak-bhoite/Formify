@@ -34,7 +34,7 @@ export default function FormCreator() {
 
   const updateQuestion = (index, field, value) => {
     const updatedQuestions = [...questions]
-    updatedQuestions[index][field] = value
+    updatedQuestions[index][field] = value;
     setQuestions(updatedQuestions)
   }
 
@@ -63,7 +63,7 @@ export default function FormCreator() {
     try {
       const formData = { title: formTitle, description: formDescription, questions }
       console.log('Submitting form data:', formData)
-      formData.adminId = '67519a2a740b64286b60c3c0'
+      formData.adminId = localStorage.getItem('userId')
       // API call to save the form
       const response = await axios.post("http://localhost:3000/create-form", formData)
       console.log('response', response?.data?.form?._id)
@@ -191,7 +191,7 @@ export default function FormCreator() {
       </div>
       <div className="container md:w-3/5 bg-orange-600 mx-auto p-4 rounded-md">
 
-        <h1 className="text-2xl font-bold mb-4">Create a New Form</h1>
+        <h1 className="text-2xl font-bold mb-4 text-white">Create a New Form</h1>
         <Card>
           <CardHeader>
             <CardTitle>Form Details</CardTitle>

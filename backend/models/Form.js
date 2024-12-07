@@ -4,7 +4,7 @@ const formSchema = new mongoose.Schema({
   adminId: {
     type: mongoose.Schema.Types.ObjectId, // Reference to the admin who created the form
     required: true,
-    ref: 'User', // Assumes you have a User schema
+    ref: 'User',
   },
   title: {
     type: String,
@@ -16,13 +16,9 @@ const formSchema = new mongoose.Schema({
   questions: [
     {
       type: {
-        type: String, // e.g., 'text', 'checkbox', 'dropdown'
+        type: String, // 'text', 'checkbox', 'dropdown'
         required: true,
       },
-      // label: {
-      //   type: String, // e.g., 'Name', 'Hobbies'
-      //   required: true,
-      // },
       question:{
         type:String,
         required: true

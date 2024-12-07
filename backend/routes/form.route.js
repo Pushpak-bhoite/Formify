@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Form = require('../models/Form'); // Assuming the Form schema is in the `models` folder
+const { default: mongoose } = require('mongoose');
 
 // Route to create a new form
 router.post('/create-form', async (req, res) => {
@@ -42,7 +43,7 @@ router.get('/forms/:formId', async (req, res) => {
   try {
     const form = await Form.findOne({ '_id': req?.params?.formId })
     if (!form) {
-      return res.status(404).json({ success:'Failed', error: 'Form not found' });
+      return res.status(404).json({ success: 'Failed', error: 'Form not found' });
     }
     console.log('form', form)
     // Save the form to the database
@@ -57,6 +58,27 @@ router.get('/forms/:formId', async (req, res) => {
   }
 });
 
+// All forms rotes
+router.get(`/user-forms/:userId`, async (req, res) => {
+  const { userId } = req.params;
+  console.log('userId', userId)
+  try {
+   
+    const id = new  mongoose.Types.ObjectId(userId)
+    const forms = await Form.find({ adminId: id });
+    if (!forms || forms.length === 0) {
+      return res.status(404).json({ success: false, error: 'No forms found for this user' });
+    }
+    console.log('form', forms)
+    res.status(200).json({
+      success: true,
+      forms,
+    });
+  } catch (error) {
+    console.error('Error fetching form:', error);
+    res.status(500).json({ error: 'Internal server error.' });
+  }
+})
 
 
 
@@ -66,6 +88,15 @@ router.get('/forms/:formId', async (req, res) => {
 
 
 
+
+
+
+
+
+
+
+
+module.exports = router;
 
 
 

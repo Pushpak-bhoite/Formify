@@ -30,15 +30,9 @@ export default function FormDisplay({ form }) {
 
   const handleSubmit = async () => {
     try {
-      const answers = form.questions.map((question, index) => ({
-        question: question.question,
-        type: question.type,
-        answer: responses[index] || (question.type === 'checkbox' ? [] : ''),
-      }))
-
       const responseData = {
         formId: form._id,
-        answers,
+        responses,
       }
 
       await axios.post('http://localhost:3000/submit-response', responseData)
@@ -46,7 +40,6 @@ export default function FormDisplay({ form }) {
         title: 'Response Submitted',
         description: 'Your responses have been saved.',
       })
-      setResponses({})
     } catch (error) {
       console.error('Error submitting response:', error)
       toast({
@@ -123,7 +116,7 @@ export default function FormDisplay({ form }) {
   return (
     <div className="w-screen min-h-screen pt-5 bg-gray-100">
       <div className="container md:w-3/5 mx-auto p-4 bg-white shadow-md rounded-md">
-        <h1 className="text-2xl font-bold mb-2">{form?.title}</h1>
+        <h1 className="text-2xl font-bold mb-2">{form.title}</h1>
         <p className="mb-4">{form.description}</p>
 
         {form.questions.map((question, index) => (
@@ -133,7 +126,7 @@ export default function FormDisplay({ form }) {
           </div>
         ))}
 
-        <Button onClick={handleSubmit} className="w-full">
+        <Button onClick={handleSubmit} className="w-full mt-4">
           Submit Responses
         </Button>
       </div>

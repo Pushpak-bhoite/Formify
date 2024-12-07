@@ -1,6 +1,7 @@
 const express = require("express");
 const bcrypt = require("bcrypt");
 const User = require("../models/User.js"); // Assuming the User model is in the `models` folder
+const Form = require("../models/Form.js");
 const router = express.Router();
 
 // Signup route
@@ -8,7 +9,7 @@ router.post("/sign-up", async (req, res) => {
   try {
     const { name, email, password } = req.body;
     console.log('req.body', req.body);
-    
+
     // Validate input
     if (!name || !email || !password) {
       return res.status(400).json({ error: "All fields are required." });
@@ -68,6 +69,8 @@ router.post("/sign-in", async (req, res) => {
     res.status(500).json({ error: "An error occurred during sign-in." });
   }
 });
+
+
 
 module.exports = router;
 

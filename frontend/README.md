@@ -15,3 +15,6 @@ send admin id to form after login
 
 
 
+create type enum in schema
+
+add field to form like multiple choices que
