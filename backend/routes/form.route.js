@@ -2,6 +2,11 @@ const express = require('express');
 const router = express.Router();
 const Form = require('../models/Form'); // Assuming the Form schema is in the `models` folder
 const { default: mongoose } = require('mongoose');
+const Response = require('../models/Response');
+const multer = require('multer');
+
+const storage = multer.memoryStorage(); // You can choose to store files in memory or disk
+const upload = multer({ storage: storage });
 
 // Route to create a new form
 router.post('/create-form', async (req, res) => {
@@ -81,27 +86,48 @@ router.get(`/user-forms/:userId`, async (req, res) => {
 })
 
 
+// Route to save a form response
+router.post('/form-response', upload.any(), async (req, res) => {
+  try {
+    const { formId } = req.body;
+    console.log('formId', formId)
+    console.log('req.files', req.files)
+    // Parse answers from the request
+    const answers = JSON.parse(req.body.answers || '[]');
 
+    // Handle file uploads
+    req.files.forEach((file, index) => {
+      const questionIndex = file.fieldname.match(/\d+/)[0];
+      answers[questionIndex].answer = {
+        filename: file.originalname,
+        mimeType: file.mimetype,
+        buffer: file.buffer,
+      };
+    });
+    console.log('answers--->', answers)
 
+    // Validate input
+    if (!formId || !Array.isArray(answers) || answers.length === 0) {
+      return res.status(400).json({ error: 'Form ID and at least one answer are required.' });
+    }
 
+    // Create a new response document
+    const newResponse = new Response({
+      formId,
+      answers,
+    });
 
+    // Save the response to the database
+    await newResponse.save();
 
-
-
-
-
-
-
-
-
-
-
-module.exports = router;
-
-
-
-
-
-
+    res.status(201).json({
+      message: 'Response saved successfully!',
+      response: newResponse,
+    });
+  } catch (error) {
+    console.error('Error saving response:', error);
+    res.status(500).json({ error: 'An error occurred while saving the response.' });
+  }
+});
 
 module.exports = router;

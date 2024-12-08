@@ -12,6 +12,7 @@ Currently, two official plugins are available:
 <!-- ------------------------------------------------------- -->
 send admin id to form after login  
 
+image, multiple-inputs, date-format 
 
 
 

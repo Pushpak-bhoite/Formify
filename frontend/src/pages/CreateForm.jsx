@@ -1,4 +1,3 @@
-'use client'
 
 import { useState } from 'react'
 import { Button } from "@/components/ui/button"
@@ -44,7 +43,6 @@ export default function FormCreator() {
     updatedQuestions.splice(index)
     setQuestions(updatedQuestions)
   }
-
 
   const addOption = (questionIndex) => {
     const updatedQuestions = [...questions]
@@ -181,7 +179,6 @@ export default function FormCreator() {
 
   return (
     <div className='w-screen min-h-screen pt-5 bg-orange-100'>
-
       <div className='flex md:w-3/5 mx-auto mb-3 space-x-2 mb-4"'>
         <Input value={formLink} readOnly placeholder="Generated URL will appear here" />
         <Button onClick={() => copyToClipboard()} disabled={!formLink}>
@@ -190,7 +187,6 @@ export default function FormCreator() {
         </Button>
       </div>
       <div className="container md:w-3/5 bg-orange-600 mx-auto p-4 rounded-md">
-
         <h1 className="text-2xl font-bold mb-4 text-white">Create a New Form</h1>
         <Card>
           <CardHeader>

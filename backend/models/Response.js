@@ -22,7 +22,7 @@ const responseSchema = new mongoose.Schema({
       },
       answer: {
         type: mongoose.Schema.Types.Mixed, // Flexible type to support different answers (string, array, file info)
-        required: true,
+        // required: true,
       },
     },
   ],
@@ -31,3 +31,5 @@ const responseSchema = new mongoose.Schema({
 const Response = mongoose.model('Response', responseSchema);
 
 module.exports = Response;
+
+
