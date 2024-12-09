@@ -36,15 +36,15 @@ export default function ViewForm() {
 
             const response = await axios.get(`http://localhost:3000/forms/${param?.formId}`)
             setFormData(response?.data?.form)
-            let insertAnsField =  response?.data?.form.questions;
-            insertAnsField = insertAnsField.map((question)=>{
-              return question.answer = ''
+            let insertAnsField = response?.data?.form.questions;
+            insertAnsField = insertAnsField.map((question) => {
+                return question.answer = ''
             })
             setQuestions(response?.data?.form.questions)
             console.log('response', response)
         }
         getFormData();
-    },[])
+    }, [])
 
 
     const handleAnswer = (index, value) => {
@@ -59,7 +59,11 @@ export default function ViewForm() {
             console.log('Submitting form data:', formData)
             formData.adminId = '67519a2a740b64286b60c3c0'
             // API call to save the form
-            const response = await axios.post("http://localhost:3000/create-form", formData)
+            const response = await axios.post("http://localhost:3000/create-form", {
+                formData, headers: {
+                    'Content-type': "multipart/form-data"
+                }
+            })
             console.log('response', response?.data?.form?._id)
             setFormLink(`http://localhost:5173/forms/${response?.data?.form?._id}`)
             if (response.status === 201) {
@@ -87,14 +91,14 @@ export default function ViewForm() {
     const renderQuestionOptions = (question, index) => {
         switch (question.type) {
             case 'text':
-                return <Input  placeholder="Text answer" onChange={(e)=>handleAnswer(index, e.target.value)} />
+                return <Input placeholder="Text answer" onChange={(e) => handleAnswer(index, e.target.value)} />
             case 'checkbox':
                 return (
                     <div className="space-y-2">
                         {question.options.map((option, optionIndex) => (
                             <div key={optionIndex} className="flex items-center space-x-2">
                                 {(
-                                    <Checkbox id={`q${index}-option-${optionIndex}`}  />
+                                    <Checkbox id={`q${index}-option-${optionIndex}`} />
                                 )}
                                 <p>{option}</p>
                             </div>
@@ -108,7 +112,7 @@ export default function ViewForm() {
                         <RadioGroup>
                             {question.options.map((option, optionIndex) => (
                                 <div key={optionIndex} className="flex items-center space-x-2">
-                                    <RadioGroupItem value={option} id={`q${index}-option-${optionIndex}`}  />
+                                    <RadioGroupItem value={option} id={`q${index}-option-${optionIndex}`} />
                                     {/* <Input
                                         value={option}
                                         onChange={(e) => updateOption(index, optionIndex, e.target.value)}
@@ -158,7 +162,7 @@ export default function ViewForm() {
 
                 <h1 className="text-4xl font-bold mb-4 text-center"  >{formData?.title}</h1>
                 <p className='text-muted underline text-center'>{formData?.description}</p>
-              
+
 
                 <div className="mt-6">
                     <h2 className="text-xl font-semibold mb-2 text-white">Questions </h2>
@@ -166,7 +170,7 @@ export default function ViewForm() {
                         <Card key={index} className="mb-4 py-4">
                             <CardContent className="space-y-4">
                                 {/* select question type */}
-                               <p>{question?.question} <span className='text-red-600'> {question.required? '*':""}</span> </p>         
+                                <p>{question?.question} <span className='text-red-600'> {question.required ? '*' : ""}</span> </p>
                                 {renderQuestionOptions(question, index)}
                             </CardContent>
                         </Card>
@@ -187,32 +191,69 @@ export default function ViewForm() {
 
 const saveForm = async () => {
     try {
-      const ansArr = questions.map((item) => {
-        return {question : item.question,answer:item.answer, type:item.type}
-      })
-      const payload = {formId: formData._id, answers:ansArr};
-      console.log('Submitting form data:', ansArr);
+        const ansArr = questions.map((item) => {
+            return { question: item.question, answer: item.answer, type: item.type }
+        })
+        const payload = { formId: formData._id, answers: ansArr };
+        console.log('Submitting form data:', ansArr);
 
 
-      const response = await axios.post("http://localhost:3000/form-response", payload);
-      console.log('response', response?.data?.form?._id);
-      if (response.status === 201) {
-          toast({
-              title: "Form Created Successfully",
-              description: "Your form has been saved.",
-          });
+        const response = await axios.post("http://localhost:3000/form-response", payload);
+        console.log('response', response?.data?.form?._id);
+        if (response.status === 201) {
+            toast({
+                title: "Form Created Successfully",
+                description: "Your form has been saved.",
+            });
 
-          // Reset form after successful save
-          // setFormTitle('');
-          // setFormDescription('');
-          // setQuestions([]);
-      }
+            // Reset form after successful save
+            // setFormTitle('');
+            // setFormDescription('');
+            // setQuestions([]);
+        }
     } catch (error) {
-      console.error('Error saving form:', error);
-      toast({
-        title: "Error",
-        description: "There was a problem saving your form.",
-        variant: "destructive",
-      });
+        console.error('Error saving form:', error);
+        toast({
+            title: "Error",
+            description: "There was a problem saving your form.",
+            variant: "destructive",
+        });
     }
-  };
+};
+
+//   --------------------------------------------------------------------
+const saveForm = async () => {
+    try {
+        const formData = new FormData();
+        // Append the form ID
+        formData.append('formId', formData._id);
+        // Append each question and its answer
+        questions.forEach((item, index) => {
+            formData.append(`answers[${index}][question]`, item.question);
+            formData.append(`answers[${index}][type]`, item.type);
+            formData.append(`answers[${index}][answer]`, item.answer); // File object
+        });
+
+        console.log('FormData contents:');
+        for (let pair of formData.entries()) {
+            console.log(pair[0], pair[1]);
+        }
+
+        const response = await axios.post("http://localhost:3000/form-response", formData);
+
+        console.log('response', response.data);
+        if (response.status === 201) {
+            toast({
+                title: "Form Submitted Successfully",
+                description: "Your form has been saved.",
+            });
+        }
+    } catch (error) {
+        console.error('Error saving form:', error);
+        toast({
+            title: "Error",
+            description: "There was a problem saving your form.",
+            variant: "destructive",
+        });
+    }
+};

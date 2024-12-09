@@ -11,14 +11,17 @@ import { Label } from "@/components/ui/label"
 import { useToast } from "@/hooks/use-toast"
 import axios from 'axios'
 import { Switch } from '@/components/ui/switch'
-import { Copy, Tally1, Trash2 } from 'lucide-react'
+import { Copy, Tally1, Trash2, X } from 'lucide-react'
+import { validateForm } from '@/utils/ValidateCreateForm'
 
 const questionTypes = [
   { value: 'text', label: 'Text' },
   { value: 'checkbox', label: 'Checkbox' },
+  { value: 'multipleChoice', label: 'Multiple Choice' },
   { value: 'radio', label: 'Radio Button' },
   { value: 'fileUpload', label: 'File Upload' },
   { value: 'dropdown', label: 'Dropdown' },
+  { value: 'date', label: 'Date' },
 ]
 
 export default function FormCreator() {
@@ -40,7 +43,7 @@ export default function FormCreator() {
   const deleteQuestion = (index) => {
     console.log('index', index)
     const updatedQuestions = [...questions] // to avoid direct updation fron state, took data to another variable  
-    updatedQuestions.splice(index)
+    updatedQuestions.splice(index, 1)
     setQuestions(updatedQuestions)
   }
 
@@ -51,6 +54,12 @@ export default function FormCreator() {
     setQuestions(updatedQuestions)
   }
 
+  const removeOption = (questionIndex, optionIndex) => {
+    const updatedQuestions = [...questions]
+    updatedQuestions[questionIndex].options.splice(optionIndex, 1)
+    setQuestions(updatedQuestions)
+  }
+
   const updateOption = (questionIndex, optionIndex, value) => {
     const updatedQuestions = [...questions]
     updatedQuestions[questionIndex].options[optionIndex] = value
@@ -58,6 +67,7 @@ export default function FormCreator() {
   }
 
   const saveForm = async () => {
+    if (!validateForm(formTitle, questions)) return
     try {
       const formData = { title: formTitle, description: formDescription, questions }
       console.log('Submitting form data:', formData)
@@ -108,12 +118,20 @@ export default function FormCreator() {
     switch (question.type) {
       case 'text':
         return <Input disabled placeholder="Text answer" />
+      case 'multipleChoice': // Combine handling for 'radio' and 'multipleChoice'
       case 'checkbox':
         return (
           <div className="space-y-2">
             {question.options.map((option, optionIndex) => (
               <div key={optionIndex} className="flex items-center space-x-2">
-                {(
+                {question.type === 'multipleChoice' ? (
+                  <RadioGroup>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value={option} id={`q${index}-option-${optionIndex}`} disabled />
+                      <Label className='text-nowrap' htmlFor={`q${index}-option-${optionIndex}`}>{option || `Option ${optionIndex + 1}`}</Label>
+                    </div>
+                  </RadioGroup>
+                ) : (
                   <Checkbox id={`q${index}-option-${optionIndex}`} disabled />
                 )}
                 <Input
@@ -121,6 +139,7 @@ export default function FormCreator() {
                   onChange={(e) => updateOption(index, optionIndex, e.target.value)}
                   placeholder={`Option ${optionIndex + 1}`}
                 />
+                <X onClick={() => removeOption(index, optionIndex)} />
               </div>
             ))}
             <Button onClick={() => addOption(index)}>Add Option</Button>
@@ -138,6 +157,8 @@ export default function FormCreator() {
                     onChange={(e) => updateOption(index, optionIndex, e.target.value)}
                     placeholder={`Option ${optionIndex + 1}`}
                   />
+                  <X onClick={() => removeOption(index, optionIndex)} />
+
                 </div>
               ))}
             </RadioGroup>
@@ -162,16 +183,22 @@ export default function FormCreator() {
               </SelectContent>
             </Select>
             {question.options.map((option, optionIndex) => (
-              <Input
-                key={optionIndex}
-                value={option}
-                onChange={(e) => updateOption(index, optionIndex, e.target.value)}
-                placeholder={`Option ${optionIndex + 1}`}
-              />
+              <div className='flex items-center gap-2'>
+                <Input
+                  key={optionIndex}
+                  value={option}
+                  onChange={(e) => updateOption(index, optionIndex, e.target.value)}
+                  placeholder={`Option ${optionIndex + 1}`}
+                />
+                <X onClick={() => removeOption(index, optionIndex)} />
+              </div>
+
             ))}
             <Button onClick={() => addOption(index)}>Add Option</Button>
           </div>
         )
+      case 'date':
+        return <Input type="date" disabled />
       default:
         return null
     }

@@ -9,26 +9,14 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
 import { useToast } from "@/hooks/use-toast"
 import axios from 'axios'
-import { Switch } from '@/components/ui/switch'
-import { Copy, Tally1, Trash2 } from 'lucide-react'
 import { useParams } from 'react-router-dom'
-
-const questionTypes = [
-  { value: 'text', label: 'Text' },
-  { value: 'checkbox', label: 'Checkbox' },
-  { value: 'radio', label: 'Radio Button' },
-  { value: 'fileUpload', label: 'File Upload' },
-  { value: 'dropdown', label: 'Dropdown' },
-]
+import { validateForm } from '@/utils/ValidateViewForm'
 
 export default function ViewForm() {
   const { toast } = useToast() // Toast hook
-  const [formTitle, setFormTitle] = useState('')
-  const [formDescription, setFormDescription] = useState('')
-  const [questions, setQuestions] = useState([])
-  const [formLink, setFormLink] = useState('')
-  const [formData, setFormData] = useState('')
-
+  const [questions, setQuestions] = useState([]) // for upadation answers
+  const [formData, setFormData] = useState('') // to show form only 
+  const [formTitle, setFormTitle] = useState('') // 
   const param = useParams();
 
   useEffect(() => {
@@ -36,10 +24,12 @@ export default function ViewForm() {
       try {
         const response = await axios.get(`http://localhost:3000/forms/${param?.formId}`);
         setFormData(response?.data?.form);
+        setFormTitle(response?.data?.form?.title)
 
         const initializedQuestions = response?.data?.form.questions.map((question) => {
           let initialAnswer;
           switch (question.type) {
+            case 'multiple':
             case 'checkbox':
               initialAnswer = []; // Multiple selections
               break;
@@ -85,33 +75,31 @@ export default function ViewForm() {
     setQuestions(updatedQuestions);
   };
 
+
   const saveForm = async () => {
+    if (!validateForm(questions)) return; // Stop submission if validation fails
     try {
-      const formData = new FormData();
-  
-      // Append the form ID
-      formData.append('formId', formData._id);
-  
-      // Append each question and its answer
-      questions.forEach((item, index) => {
-          formData.append(`answers[${index}][question]`, item.question);
-          formData.append(`answers[${index}][type]`, item.type);
-          formData.append(`answers[${index}][answer]`, item.answer); // File object
+      const ansArr = questions.map((item) => {
+        return { question: item.question, answer: item.answer, type: item.type }
+      })
+      const payload = { formId: formData._id, answers: ansArr };
+      console.log('Submitting form data:', ansArr);
+
+      const response = await axios.post("http://localhost:3000/form-response", payload, {
+        // formData, headers: {
+        //     'Content-type': "multipart/form-data"
+        // }
       });
-   
-      console.log('FormData contents:');
-      for (let pair of formData.entries()) {
-        console.log(pair[0], pair[1]);
-      }
-      
-      const response = await axios.post("http://localhost:3000/form-response", formData);
-  
-      console.log('response', response.data);
+      console.log('response', response?.data?.form?._id);
       if (response.status === 201) {
         toast({
-          title: "Form Submitted Successfully",
+          title: "Form Submited Successfully",
           description: "Your form has been saved.",
         });
+
+        // Reset form after successful save
+        setFormTitle('Your responce has been saved ');
+        setQuestions([]);
       }
     } catch (error) {
       console.error('Error saving form:', error);
@@ -122,7 +110,7 @@ export default function ViewForm() {
       });
     }
   };
-  
+
   console.log('questions ->', questions)
 
   const renderQuestionOptions = (question, index) => {
@@ -137,6 +125,22 @@ export default function ViewForm() {
         );
 
       case 'checkbox':
+        return (
+          <div className="space-y-2">
+            {question.options.map((option, optionIndex) => (
+              <div key={optionIndex} className="flex items-center space-x-2">
+                <Checkbox
+                  id={`q${index}-option-${optionIndex}`}
+                  checked={question.answer.includes(option)}
+                  onCheckedChange={() => handleCheckboxChange(index, option)}
+                />
+                <Label htmlFor={`q${index}-option-${optionIndex}`}>{option}</Label>
+              </div>
+            ))}
+          </div>
+        );
+
+      case 'multipleChoice':
         return (
           <div className="space-y-2">
             {question.options.map((option, optionIndex) => (
@@ -197,6 +201,8 @@ export default function ViewForm() {
           </div>
         );
 
+      case 'date':
+        return <Input type="date" onChange={(e) => handleAnswer(index, e.target.value)} />
       default:
         return null;
     }
@@ -207,12 +213,11 @@ export default function ViewForm() {
     <div className='w-screen min-h-screen pt-5 bg-orange-100'>
       <div className="container md:w-3/5 bg-orange-600 mx-auto p-4 rounded-md">
 
-        <h1 className="text-4xl font-bold mb-4 text-center"  >{formData?.title}</h1>
-        <p className='text-muted underline text-center'>{formData?.description}</p>
-
+        <h1 className="text-4xl font-bold mb-4 text-center"  >{formTitle}</h1>
+        <p className='text-muted underline text-center'>{questions.length > 0 && formData?.description}</p>
 
         <div className="mt-6">
-          <h2 className="text-xl font-semibold mb-2 text-white">Questions </h2>
+          <h2 className="text-xl font-semibold mb-2 text-white">{questions.length > 0 && 'Questions'} </h2>
           {questions.map((question, index) => (
             <Card key={index} className="mb-4 py-4">
               <CardContent className="space-y-4">
@@ -223,10 +228,11 @@ export default function ViewForm() {
             </Card>
           ))}
         </div>
-
-        <CardFooter className="mt-6">
-          <Button onClick={saveForm} type='button' className="w-full">Save Form</Button>
-        </CardFooter>
+        {
+          questions.length > 0 &&
+          <CardFooter className="mt-6">
+            <Button onClick={saveForm} type='button' className="w-full">Save Form</Button>
+          </CardFooter>}
       </div>
     </div>
   )

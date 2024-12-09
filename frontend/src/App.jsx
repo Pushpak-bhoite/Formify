@@ -1,6 +1,4 @@
 import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
 import './App.css'
 import CreateForm from './pages/CreateForm'
 import SignupForm from './pages/SignUp'
@@ -8,7 +6,8 @@ import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import SignInForm from './pages/SignIn'
 import ViewForm from './pages/ViewForm'
 import Home from './pages/Home'
-import UserForms from './pages/UserForms'
+import ShowFormResponses from './pages/ShowFormResponse'
+import Dashboard from './pages/Dashboard'
 
 function App() {
   const [count, setCount] = useState(0)
@@ -23,7 +22,8 @@ function App() {
             <Route path="/sign-in" element={<SignInForm />} />
             <Route path="/sign-up" element={<SignupForm />} />
             <Route path="/forms/:formId" element={<ViewForm />} />
-            <Route path="/user-forms/:userId" element={<UserForms />} />
+            <Route path="/user-forms/:userId" element={<Dashboard />} />
+            <Route path="/form-responses/:formId" element={<ShowFormResponses />} />
           </Routes>
         </div>
       </BrowserRouter>

@@ -19,3 +19,5 @@ image, multiple-inputs, date-format
 create type enum in schema
 
 add field to form like multiple choices que
+
+delete option 
