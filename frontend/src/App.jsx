@@ -8,6 +8,8 @@ import ViewForm from './pages/ViewForm'
 import Home from './pages/Home'
 import ShowFormResponses from './pages/ShowFormResponse'
 import Dashboard from './pages/Dashboard'
+import NotFound from './pages/NotFound'
+import EditForm from './pages/EditForm'
 
 function App() {
   const [count, setCount] = useState(0)
@@ -22,8 +24,10 @@ function App() {
             <Route path="/sign-in" element={<SignInForm />} />
             <Route path="/sign-up" element={<SignupForm />} />
             <Route path="/forms/:formId" element={<ViewForm />} />
+            <Route path="/edit-form/:formId" element={<EditForm />} />
             <Route path="/user-forms/:userId" element={<Dashboard />} />
             <Route path="/form-responses/:formId" element={<ShowFormResponses />} />
+            <Route path="*" element={<NotFound />} />
           </Routes>
         </div>
       </BrowserRouter>

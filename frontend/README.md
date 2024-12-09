@@ -9,15 +9,9 @@ Currently, two official plugins are available:
 
 
 
-<!-- ------------------------------------------------------- -->
-send admin id to form after login  
-
+<!--------------------------------------------------------- -->
 image, multiple-inputs, date-format 
 
+create type enum in schema 
 
-
-create type enum in schema
-
-add field to form like multiple choices que
-
-delete option 
+Work on dashboard, dark & light theme 

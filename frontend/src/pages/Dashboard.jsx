@@ -3,7 +3,6 @@ import React, { useEffect, useState } from 'react';
 import { PlusCircle, FileText, BarChart2, Edit, Trash2, Trash2Icon } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Link, useParams } from 'react-router-dom';
 import { Copy } from 'lucide-react';
 
@@ -127,7 +126,7 @@ const Dashboard = () => {
                     </Button>
                   </Link>
 
-                  <Link to={`/forms/${form?._id}`}>
+                  <Link to={`/edit-form/${form?._id}`}>
                     <Button variant="outline" size="sm">
                       <Edit className="mr-2 h-4 w-4" /> Edit Form
                     </Button>
@@ -140,48 +139,7 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* <div>
-        <h2 className="text-2xl font-semibold mb-4">All Forms</h2>
-        <div className="flex items-center space-x-2 mb-4">
-          <Input
-            type="text"
-            placeholder="Search forms..."
-            className="max-w-sm"
-          />
-          <Button variant="secondary">
-            <FileText className="mr-2 h-4 w-4" /> Search
-          </Button>
-        </div>
-        <div className="bg-card text-card-foreground rounded-lg shadow-sm">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b">
-                <th className="text-left p-3">Form Title</th>
-                <th className="text-left p-3">Responses</th>
-                <th className="text-left p-3">Last Edited</th>
-                <th className="text-left p-3">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {recentForms?.map((form) => (
-                <tr key={form.id} className="border-b last:border-b-0">
-                  <td className="p-3">{form.title}</td>
-                  <td className="p-3">{form.responses}</td>
-                  <td className="p-3">{form.lastEdited}</td>
-                  <td className="p-3">
-                    <Button variant="ghost" size="sm" className="mr-2">
-                      <BarChart2 className="mr-2 h-4 w-4" /> Responses
-                    </Button>
-                    <Button variant="ghost" size="sm">
-                      <Edit className="mr-2 h-4 w-4" /> Edit
-                    </Button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div> */}
+     
     </div>
   );
 };

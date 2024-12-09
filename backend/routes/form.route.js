@@ -42,6 +42,7 @@ router.post('/create-form', async (req, res) => {
   }
 });
 
+//Get single form to fill
 router.get('/forms/:formId', async (req, res) => {
   try {
     const form = await Form.findOne({ '_id': req?.params?.formId })
@@ -83,72 +84,17 @@ router.get(`/user-forms/:userId`, async (req, res) => {
   }
 })
 
-// Route to save a form response
-// Route to submit a form response
-router.post('/form-response', async (req, res) => {
-  try {
-    const { formId, answers } = req.body;
-    console.log('req.body', req.body)
-    // Validate input
-    if (!formId || !answers || !Array.isArray(answers) || answers.length === 0) {
-      return res.status(400).json({ error: 'Form ID and responses are required.' });
-    }
-
-    // Check if the form exists
-    const form = await Form.findById(formId);
-    if (!form) {
-      return res.status(404).json({ error: 'Form not found.' });
-    }
-
-    // Create a new response document
-    const newResponse = new Response({
-      formId,
-      answers,
-    });
-
-    // Save the response to the database
-    await newResponse.save();
-
-    res.status(201).json({
-      message: 'Response submitted successfully!',
-      data: newResponse,
-    });
-  } catch (error) {
-    console.error('Error submitting response:', error);
-    res.status(500).json({ error: 'An error occurred while submitting the response.' });
-  }
-});
-
-// Route to get responses by form ID
-router.get('/show-responses/:formId', async (req, res) => {
-  const { formId } = req.params;
-  try {
-    const responses = await Response.find({ formId }).populate('formId');
-    if (!responses || responses.length === 0) {
-      return res.status(404).json({ success: false, error: 'No responses found for this form' });
-    }
-    res.status(200).json(responses);
-  } catch (error) {
-    console.error('Error fetching responses for form:', error);
-    res.status(500).json({ success: false, error: 'Internal Server Error' });
-  }
-});
-
-
 // Route to delete a form by ID
 router.delete('/forms/:formId', async (req, res) => {
   const { formId } = req.params;
-
   try {
     // Check if the form exists
     const form = await Form.findById(formId);
     if (!form) {
       return res.status(404).json({ success: false, error: 'Form not found.' });
     }
-
     // Delete associated responses
     await Response.deleteMany({ formId });
-
     // Delete the form
     await Form.findByIdAndDelete(formId);
 
@@ -162,8 +108,36 @@ router.delete('/forms/:formId', async (req, res) => {
   }
 });
 
+// Route to update a form by ID
+router.put('/forms/:formId', async (req, res) => {
+  const { formId } = req.params;
+  const { title, description, questions } = req.body;
 
+  try {
+    // Check if the form exists
+    const form = await Form.findById(formId);
+    if (!form) {
+      return res.status(404).json({ success: false, error: 'Form not found.' });
+    }
 
+    // Update form fields if provided in the request body
+    if (title) form.title = title;
+    if (description) form.description = description;
+    if (questions && Array.isArray(questions)) form.questions = questions;
+
+    // Save the updated form to the database
+    const updatedForm = await form.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Form updated successfully!',
+      form: updatedForm,
+    });
+  } catch (error) {
+    console.error('Error updating form:', error);
+    res.status(500).json({ success: false, error: 'Internal server error.' });
+  }
+});
 
 module.exports = router;
 
