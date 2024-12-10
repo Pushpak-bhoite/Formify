@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -51,6 +51,14 @@ export default function SignInForm() {
       })
     }
   }
+
+  useEffect(() => {
+    const userId = localStorage.getItem('userId')
+    if (userId) {
+      // If the user is already logged in, redirect them to the dashboard
+      navigate(`/user-forms/${userId}`)
+    }
+  }, [navigate])
 
   return (
     <div className="flex justify-center items-center min-h-screen bg-gray-100">

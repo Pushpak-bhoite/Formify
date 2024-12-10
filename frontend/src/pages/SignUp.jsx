@@ -1,16 +1,17 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { useToast } from "@/hooks/use-toast"
 import axios from 'axios'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 
 export default function SignupForm() {
   const { toast } = useToast()
+  const navigate =useNavigate()
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -53,6 +54,15 @@ export default function SignupForm() {
       })
     }
   }
+
+
+  useEffect(() => {
+    const userId = localStorage.getItem('userId')
+    if (userId) {
+      // If the user is already logged in, redirect them to the dashboard
+      navigate(`/user-forms/${userId}`)
+    }
+  }, [navigate])
 
   return (
     <div className="flex justify-center items-center min-h-screen bg-gray-100">

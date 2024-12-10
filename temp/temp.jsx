@@ -1,259 +1,148 @@
-import { useEffect, useState } from 'react'
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Label } from "@/components/ui/label"
-import { useToast } from "@/hooks/use-toast"
-import axios from 'axios'
-import { Switch } from '@/components/ui/switch'
-import { Copy, Tally1, Trash2 } from 'lucide-react'
-import { useParams } from 'react-router-dom'
 
-const questionTypes = [
-    { value: 'text', label: 'Text' },
-    { value: 'checkbox', label: 'Checkbox' },
-    { value: 'radio', label: 'Radio Button' },
-    { value: 'fileUpload', label: 'File Upload' },
-    { value: 'dropdown', label: 'Dropdown' },
-]
+import React, { useEffect, useState } from 'react';
+import { PlusCircle, FileText, BarChart2, Edit, Trash2, Trash2Icon } from 'lucide-react';
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Link, useParams } from 'react-router-dom';
+import { Copy } from 'lucide-react';
 
-export default function ViewForm() {
-    const { toast } = useToast() // Toast hook
-    const [formTitle, setFormTitle] = useState('')
-    const [formDescription, setFormDescription] = useState('')
-    const [questions, setQuestions] = useState([])
-    const [formLink, setFormLink] = useState('')
-    const [formData, setFormData] = useState('')
+import axios from 'axios';
+import { toast } from '@/hooks/use-toast';
 
-    const param = useParams();
+const Dashboard = () => {
 
-    useEffect(() => {
-        async function getFormData() {
+  const { userId } = useParams();
+  const [recentForms, setRecentForms] = useState()
+  console.log('userId', userId)
 
-            const response = await axios.get(`http://localhost:3000/forms/${param?.formId}`)
-            setFormData(response?.data?.form)
-            let insertAnsField = response?.data?.form.questions;
-            insertAnsField = insertAnsField.map((question) => {
-                return question.answer = ''
-            })
-            setQuestions(response?.data?.form.questions)
-            console.log('response', response)
-        }
-        getFormData();
-    }, [])
+  
 
-
-    const handleAnswer = (index, value) => {
-        const updatedQuestions = [...questions]
-        updatedQuestions[index]['answer'] = value;
-        setQuestions(updatedQuestions)
+  useEffect(() => {
+    async function getUserForms() {
+      try {
+        const response = await axios.get(`http://localhost:3000/user-forms/${userId}`)
+        const rev = [...response?.data.forms].reverse()
+        setRecentForms(rev)
+        console.log('response', response)
+      } catch (error) {
+        console.log(error)
+        toast({
+          title: "Error",
+          description: error?.response?.data?.error || "Invalid email or password.",
+          variant: "destructive",
+        })
+      }
     }
+    getUserForms()
+  }, [])
 
-    const saveForm = async () => {
-        try {
-            const formData = { title: formTitle, description: formDescription, questions }
-            console.log('Submitting form data:', formData)
-            formData.adminId = '67519a2a740b64286b60c3c0'
-            // API call to save the form
-            const response = await axios.post("http://localhost:3000/create-form", {
-                formData, headers: {
-                    'Content-type': "multipart/form-data"
-                }
-            })
-            console.log('response', response?.data?.form?._id)
-            setFormLink(`http://localhost:5173/forms/${response?.data?.form?._id}`)
-            if (response.status === 201) {
-                toast({
-                    title: "Form Created Successfully",
-                    description: "Your form has been saved.",
-                })
-                // Reset form after successful save
-                setFormTitle('')
-                setFormDescription('')
-                setQuestions([])
-            }
-        } catch (error) {
-            console.log('Error saving form:', error)
-            toast({
-                title: "Error",
-                description: "There was a problem saving your form.",
-                variant: "destructive",
-            })
-        }
+  const copyLink = (formId) => {
+    const link = `${window.location.origin}/forms/${formId}`;
+    navigator.clipboard.writeText(link)
+      .then(() => {
+        console.log('Link copied to clipboard:', link);
+        // alert('Link copied to clipboard!');
+        toast({
+          title: "Success",
+          description: "Link copied to clipboard!.",
+        })
+      })
+      .catch((err) => {
+        console.error('Failed to copy link:', err);
+        toast({
+          title: "Error",
+          description: "Failed to copy url.",
+          variant: "destructive",
+        })
+      });
+  };
+
+  const deleteForm = async (formId) => {
+    if (!window.confirm("Are you sure you want to delete this form?")) return;
+  
+    try {
+      await axios.delete(`http://localhost:3000/forms/${formId}`);
+      toast({
+        title: "Success",
+        description: "Form deleted successfully!",
+      });
+  
+      // Update the recentForms state to reflect the deletion
+      setRecentForms((prevForms) => prevForms.filter((form) => form._id !== formId));
+    } catch (error) {
+      console.error("Error deleting form:", error);
+      toast({
+        title: "Error",
+        description: error?.response?.data?.error || "Failed to delete the form.",
+        variant: "destructive",
+      });
     }
-
-    console.log('questions ->', questions)
-
-    const renderQuestionOptions = (question, index) => {
-        switch (question.type) {
-            case 'text':
-                return <Input placeholder="Text answer" onChange={(e) => handleAnswer(index, e.target.value)} />
-            case 'checkbox':
-                return (
-                    <div className="space-y-2">
-                        {question.options.map((option, optionIndex) => (
-                            <div key={optionIndex} className="flex items-center space-x-2">
-                                {(
-                                    <Checkbox id={`q${index}-option-${optionIndex}`} />
-                                )}
-                                <p>{option}</p>
-                            </div>
-                        ))}
-                        {/* <Button onClick={() => addOption(index)}>Add Option</Button> */}
-                    </div>
-                )
-            case 'radio':
-                return (
-                    <div className="space-y-2">
-                        <RadioGroup>
-                            {question.options.map((option, optionIndex) => (
-                                <div key={optionIndex} className="flex items-center space-x-2">
-                                    <RadioGroupItem value={option} id={`q${index}-option-${optionIndex}`} />
-                                    {/* <Input
-                                        value={option}
-                                        onChange={(e) => updateOption(index, optionIndex, e.target.value)}
-                                        placeholder={`Option ${optionIndex + 1}`}
-                                    /> */}
-                                    <p>{option}</p>
-                                </div>
-                            ))}
-                        </RadioGroup>
-                    </div>
-                )
-            case 'fileUpload':
-                return <Input type="file" />
-            case 'dropdown':
-                return (
-                    <div className="space-y-2">
-                        <Select >
-                            <SelectTrigger>
-                                <SelectValue placeholder="Select an option" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {question.options.map((option, optionIndex) => (
-                                    <SelectItem key={optionIndex} value={option || `option-${optionIndex + 1}`}>
-                                        {option || `Option ${optionIndex + 1}`}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                        {question.options.map((option, optionIndex) => (
-                            <Input
-                                key={optionIndex}
-                                value={option}
-                                onChange={(e) => updateOption(index, optionIndex, e.target.value)}
-                                placeholder={`Option ${optionIndex + 1}`}
-                            />
-                        ))}
-                    </div>
-                )
-            default:
-                return null
-        }
-    }
-
-    return (
-        <div className='w-screen min-h-screen pt-5 bg-orange-100'>
-            <div className="container md:w-3/5 bg-orange-600 mx-auto p-4 rounded-md">
-
-                <h1 className="text-4xl font-bold mb-4 text-center"  >{formData?.title}</h1>
-                <p className='text-muted underline text-center'>{formData?.description}</p>
+  };
+  
 
 
-                <div className="mt-6">
-                    <h2 className="text-xl font-semibold mb-2 text-white">Questions </h2>
-                    {questions.map((question, index) => (
-                        <Card key={index} className="mb-4 py-4">
-                            <CardContent className="space-y-4">
-                                {/* select question type */}
-                                <p>{question?.question} <span className='text-red-600'> {question.required ? '*' : ""}</span> </p>
-                                {renderQuestionOptions(question, index)}
-                            </CardContent>
-                        </Card>
-                    ))}
+  return (
+    <div className="container mx-auto p-4">
+      <h1 className="text-3xl font-bold mb-6">Form Creator Dashboard</h1>
+
+      <div className="mb-8  flex ">
+        <Link className="ml-auto w-full sm:w-auto " to={`/create-form`}>
+          <Button className=" bg-blue-700">
+            <PlusCircle className="mr-2 h-4 w-4" /> Create New Form
+          </Button>
+        </Link>
+      </div>
+
+      <div className="mb-6">
+        <h2 className="text-2xl font-semibold mb-4">Recent Forms</h2>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {recentForms?.map((form) => (
+            <Card key={form._id}>
+              <CardHeader>
+                <CardTitle>{form.title}</CardTitle>
+                <CardDescription>
+                  Last edited: {new Date(form.createdAt).toLocaleDateString()}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground">
+                  Questions {form?.questions?.length}
+                </p>
+              </CardContent>
+              <CardFooter className="flex flex-col items-start space-y-2">
+                <div  className='flex gap-2'>
+                  <Button variant="outline" size="sm" onClick={() => copyLink(form?._id)}>
+                    <Copy className="mr-2 h-4 w-4" /> Copy Link
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={()=>deleteForm(form._id)} >
+                    <Trash2Icon color='red' className=" mr-2 h-4 w-4" /> Delete Form
+                  </Button>
                 </div>
 
-                <CardFooter className="mt-6">
-                    <Button onClick={saveForm} className="w-full">Save Form</Button>
-                </CardFooter>
-            </div>
+                <div className="flex justify-between w-full">
+                  <Link to={`/form-responses/${form?._id}`}>
+                    <Button variant="outline" size="sm">
+                      <BarChart2 className="mr-2 h-4 w-4" /> View Responses
+                    </Button>
+                  </Link>
+
+                  <Link to={`/edit-form/${form?._id}`}>
+                    <Button variant="outline" size="sm">
+                      <Edit className="mr-2 h-4 w-4" /> Edit Form
+                    </Button>
+                  </Link>
+                </div>
+              </CardFooter>
+            </Card>
+          ))}
+
         </div>
-    )
-}
+      </div>
 
-
-// ----------------------------------------------------------------------------------
-
-
-const saveForm = async () => {
-    try {
-        const ansArr = questions.map((item) => {
-            return { question: item.question, answer: item.answer, type: item.type }
-        })
-        const payload = { formId: formData._id, answers: ansArr };
-        console.log('Submitting form data:', ansArr);
-
-
-        const response = await axios.post("http://localhost:3000/form-response", payload);
-        console.log('response', response?.data?.form?._id);
-        if (response.status === 201) {
-            toast({
-                title: "Form Created Successfully",
-                description: "Your form has been saved.",
-            });
-
-            // Reset form after successful save
-            // setFormTitle('');
-            // setFormDescription('');
-            // setQuestions([]);
-        }
-    } catch (error) {
-        console.error('Error saving form:', error);
-        toast({
-            title: "Error",
-            description: "There was a problem saving your form.",
-            variant: "destructive",
-        });
-    }
+     
+    </div>
+  );
 };
 
-//   --------------------------------------------------------------------
-const saveForm = async () => {
-    try {
-        const formData = new FormData();
-        // Append the form ID
-        formData.append('formId', formData._id);
-        // Append each question and its answer
-        questions.forEach((item, index) => {
-            formData.append(`answers[${index}][question]`, item.question);
-            formData.append(`answers[${index}][type]`, item.type);
-            formData.append(`answers[${index}][answer]`, item.answer); // File object
-        });
+export default Dashboard;
 
-        console.log('FormData contents:');
-        for (let pair of formData.entries()) {
-            console.log(pair[0], pair[1]);
-        }
-
-        const response = await axios.post("http://localhost:3000/form-response", formData);
-
-        console.log('response', response.data);
-        if (response.status === 201) {
-            toast({
-                title: "Form Submitted Successfully",
-                description: "Your form has been saved.",
-            });
-        }
-    } catch (error) {
-        console.error('Error saving form:', error);
-        toast({
-            title: "Error",
-            description: "There was a problem saving your form.",
-            variant: "destructive",
-        });
-    }
-};

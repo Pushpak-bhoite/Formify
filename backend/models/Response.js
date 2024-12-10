@@ -10,14 +10,14 @@ const responseSchema = new mongoose.Schema({
     type: Date,
     default: Date.now,
   },
+  version: {
+    type: Number, // The version of the form when the response was submitted
+    required: true,
+  },
   answers: [
     {
       question: {
         type: String, // The question text
-        required: true,
-      },
-      type: {
-        type: String, // The question type (e.g., 'text', 'checkbox', 'radio', etc.)
         required: true,
       },
       answer: {

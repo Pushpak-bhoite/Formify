@@ -125,6 +125,8 @@ router.put('/forms/:formId', async (req, res) => {
     if (description) form.description = description;
     if (questions && Array.isArray(questions)) form.questions = questions;
 
+    // Increment the version number by 1
+    form.version = form.version + 1;
     // Save the updated form to the database
     const updatedForm = await form.save();
 

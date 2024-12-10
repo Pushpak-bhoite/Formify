@@ -10,7 +10,7 @@ const multer = require('multer');
 // Route to submit a form response
 router.post('/form-response', async (req, res) => {
   try {
-    const { formId, answers } = req.body;
+    const { formId, answers, version } = req.body;
     if (!formId || !answers || !Array.isArray(answers) || answers.length === 0) {
       return res.status(400).json({ error: 'Form ID and responses are required.' });
     }
@@ -25,6 +25,7 @@ router.post('/form-response', async (req, res) => {
     const newResponse = new Response({
       formId,
       answers,
+      version
     });
 
     // Save the response to the database

@@ -1,59 +1,50 @@
-
 import React, { useEffect, useState } from 'react';
-import { PlusCircle, FileText, BarChart2, Edit, Trash2, Trash2Icon } from 'lucide-react';
+import { PlusCircle, BarChart2, Copy } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Link, useParams } from 'react-router-dom';
-import { Copy } from 'lucide-react';
-
 import axios from 'axios';
 import { toast } from '@/hooks/use-toast';
+import KebabMenu from '@/components/KebabMenu';
 
 const Dashboard = () => {
-
   const { userId } = useParams();
-  const [recentForms, setRecentForms] = useState()
-  console.log('userId', userId)
-
-  
+  const [recentForms, setRecentForms] = useState([]);
 
   useEffect(() => {
     async function getUserForms() {
       try {
-        const response = await axios.get(`http://localhost:3000/user-forms/${userId}`)
-        const rev = [...response?.data.forms].reverse()
-        setRecentForms(rev)
-        console.log('response', response)
+        const response = await axios.get(`http://localhost:3000/user-forms/${userId}`);
+        const rev = [...response?.data.forms].reverse();
+        setRecentForms(rev);
       } catch (error) {
-        console.log(error)
+        console.log(error);
         toast({
           title: "Error",
-          description: error?.response?.data?.error || "Invalid email or password.",
+          description: error?.response?.data?.error || "Failed to fetch user forms.",
           variant: "destructive",
-        })
+        });
       }
     }
-    getUserForms()
-  }, [])
+    getUserForms();
+  }, [userId]);
 
   const copyLink = (formId) => {
     const link = `${window.location.origin}/forms/${formId}`;
     navigator.clipboard.writeText(link)
       .then(() => {
-        console.log('Link copied to clipboard:', link);
-        // alert('Link copied to clipboard!');
         toast({
           title: "Success",
-          description: "Link copied to clipboard!.",
-        })
+          description: "Link copied to clipboard!",
+        });
       })
       .catch((err) => {
         console.error('Failed to copy link:', err);
         toast({
           title: "Error",
-          description: "Failed to copy url.",
+          description: "Failed to copy URL.",
           variant: "destructive",
-        })
+        });
       });
   };
 
@@ -66,8 +57,6 @@ const Dashboard = () => {
         title: "Success",
         description: "Form deleted successfully!",
       });
-  
-      // Update the recentForms state to reflect the deletion
       setRecentForms((prevForms) => prevForms.filter((form) => form._id !== formId));
     } catch (error) {
       console.error("Error deleting form:", error);
@@ -78,16 +67,14 @@ const Dashboard = () => {
       });
     }
   };
-  
-
 
   return (
     <div className="container mx-auto p-4">
       <h1 className="text-3xl font-bold mb-6">Form Creator Dashboard</h1>
 
-      <div className="mb-8  flex ">
-        <Link className="ml-auto w-full sm:w-auto " to={`/create-form`}>
-          <Button className=" bg-blue-700">
+      <div className="mb-8 flex">
+        <Link className="ml-auto w-full sm:w-auto" to={`/create-form`}>
+          <Button className="bg-blue-700">
             <PlusCircle className="mr-2 h-4 w-4" /> Create New Form
           </Button>
         </Link>
@@ -99,47 +86,36 @@ const Dashboard = () => {
           {recentForms?.map((form) => (
             <Card key={form._id}>
               <CardHeader>
-                <CardTitle>{form.title}</CardTitle>
+                <div className="flex justify-between items-center">
+                  <CardTitle>{form.title}</CardTitle>
+                  <KebabMenu 
+                    onEdit={() => window.location.href = `/edit-form/${form._id}`}
+                    onDelete={() => deleteForm(form._id)}
+                  />
+                </div>
                 <CardDescription>
                   Last edited: {new Date(form.createdAt).toLocaleDateString()}
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-muted-foreground">
-                  Questions {form?.questions?.length}
+                  Questions: {form?.questions?.length}
                 </p>
               </CardContent>
-              <CardFooter className="flex flex-col items-start space-y-2">
-                <div  className='flex gap-2'>
-                  <Button variant="outline" size="sm" onClick={() => copyLink(form?._id)}>
-                    <Copy className="mr-2 h-4 w-4" /> Copy Link
+              <CardFooter className="flex justify-between">
+                <Button variant="outline" size="sm" onClick={() => copyLink(form?._id)}>
+                  <Copy className="mr-2 h-4 w-4" /> Copy Link
+                </Button>
+                <Link to={`/form-responses/${form?._id}`}>
+                  <Button variant="outline" size="sm">
+                    <BarChart2 className="mr-2 h-4 w-4" /> View Responses
                   </Button>
-                  <Button variant="outline" size="sm" onClick={()=>deleteForm(form._id)} >
-                    <Trash2Icon color='red' className=" mr-2 h-4 w-4" /> Delete Form
-                  </Button>
-                </div>
-
-                <div className="flex justify-between w-full">
-                  <Link to={`/form-responses/${form?._id}`}>
-                    <Button variant="outline" size="sm">
-                      <BarChart2 className="mr-2 h-4 w-4" /> View Responses
-                    </Button>
-                  </Link>
-
-                  <Link to={`/edit-form/${form?._id}`}>
-                    <Button variant="outline" size="sm">
-                      <Edit className="mr-2 h-4 w-4" /> Edit Form
-                    </Button>
-                  </Link>
-                </div>
+                </Link>
               </CardFooter>
             </Card>
           ))}
-
         </div>
       </div>
-
-     
     </div>
   );
 };

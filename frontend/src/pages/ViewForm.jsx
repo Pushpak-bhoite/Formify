@@ -80,9 +80,9 @@ export default function ViewForm() {
     if (!validateForm(questions)) return; // Stop submission if validation fails
     try {
       const ansArr = questions.map((item) => {
-        return { question: item.question, answer: item.answer, type: item.type }
+        return { question: item.question, answer: item.answer}
       })
-      const payload = { formId: formData._id, answers: ansArr };
+      const payload = { formId: formData._id, answers: ansArr, version: formData?.version};
       console.log('Submitting form data:', ansArr);
 
       const response = await axios.post("http://localhost:3000/form-response", payload, {

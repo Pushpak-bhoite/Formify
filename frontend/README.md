@@ -12,6 +12,4 @@ Currently, two official plugins are available:
 <!--------------------------------------------------------- -->
 image, multiple-inputs, date-format 
 
-create type enum in schema 
-
 Work on dashboard, dark & light theme 
