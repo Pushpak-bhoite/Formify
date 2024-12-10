@@ -10,12 +10,13 @@ import ShowFormResponses from './pages/ShowFormResponse'
 import Dashboard from './pages/Dashboard'
 import NotFound from './pages/NotFound'
 import EditForm from './pages/EditForm'
+import { ThemeProvider } from './components/ThemeProvider'
 
 function App() {
-  const [count, setCount] = useState(0)
 
   return (
     <>
+    <ThemeProvider>
       <BrowserRouter>
         <div>
           <Routes>
@@ -31,6 +32,7 @@ function App() {
           </Routes>
         </div>
       </BrowserRouter>
+    </ThemeProvider>
     </>
   )
 }

@@ -6,12 +6,12 @@ import { Link, useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { toast } from '@/hooks/use-toast';
 import KebabMenu from '@/components/KebabMenu';
-// import { useTheme } from '@/components/ThemeProvider';
+import { useTheme } from '@/components/ThemeProvider';
 
 const Dashboard = () => {
   const { userId } = useParams();
   const [recentForms, setRecentForms] = useState([]);
-  // const { theme, toggleTheme } = useTheme();
+  const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -83,8 +83,8 @@ const Dashboard = () => {
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">Form Creator Dashboard</h1>
         <div className="flex items-center space-x-2">
-          <Button variant="outline" size="icon" >
-            {'dark' === 'light' ? <Moon className="h-[1.2rem] w-[1.2rem]" /> : <Sun className="h-[1.2rem] w-[1.2rem]" />}
+          <Button variant="outline" size="icon" onClick={toggleTheme} >
+            {theme === 'light' ? <Moon className="h-[1.2rem] w-[1.2rem]" /> : <Sun className="h-[1.2rem] w-[1.2rem]" />}
           </Button>
           <Button variant="outline" size="icon" onClick={handleLogout}>
             <LogOut className="h-[1.2rem] w-[1.2rem]" />
