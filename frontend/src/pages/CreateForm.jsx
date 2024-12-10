@@ -205,7 +205,7 @@ export default function FormCreator() {
   }
 
   return (
-    <div className='w-screen min-h-screen pt-5 bg-orange-100'>
+    <div className='w-screen min-h-screen pt-5 bg-blue-50'>
       <div className='flex md:w-3/5 mx-auto mb-3 space-x-2 mb-4"'>
         <Input value={formLink} readOnly placeholder="Generated URL will appear here" />
         <Button onClick={() => copyToClipboard()} disabled={!formLink}>
@@ -213,8 +213,9 @@ export default function FormCreator() {
           Copy
         </Button>
       </div>
-      <div className="container md:w-3/5 bg-orange-600 mx-auto p-4 rounded-md">
-        <h1 className="text-2xl font-bold mb-4 text-white">Create a New Form</h1>
+      {/* Change form color  */}
+      <div className="container md:w-3/5 bg--500 mx-auto p-4 rounded-md">
+        <h1 className="text-2xl font-bold mb-4 ">Create a New Form</h1>
         <Card>
           <CardHeader>
             <CardTitle>Form Details</CardTitle>
@@ -236,7 +237,7 @@ export default function FormCreator() {
         </Card>
 
         <div className="mt-6">
-          <h2 className="text-xl font-semibold mb-2 text-white">Questions </h2>
+          <h2 className="text-xl font-semibold mb-2">Questions </h2>
           {questions.map((question, index) => (
             <Card key={index} className="mb-4 py-4">
               <CardContent className="space-y-4">

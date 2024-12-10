@@ -1,15 +1,18 @@
 import React, { useEffect, useState } from 'react';
-import { PlusCircle, BarChart2, Copy } from 'lucide-react';
+import { PlusCircle, BarChart2, Copy, Moon, Sun, LogOut } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { toast } from '@/hooks/use-toast';
 import KebabMenu from '@/components/KebabMenu';
+// import { useTheme } from '@/components/ThemeProvider';
 
 const Dashboard = () => {
   const { userId } = useParams();
   const [recentForms, setRecentForms] = useState([]);
+  // const { theme, toggleTheme } = useTheme();
+  const navigate = useNavigate();
 
   useEffect(() => {
     async function getUserForms() {
@@ -68,13 +71,30 @@ const Dashboard = () => {
     }
   };
 
+  const handleLogout = () => {
+    // Implement your logout logic here
+    // For example:
+    localStorage.removeItem('userId');
+    navigate('/sign-in');
+  };
+
   return (
     <div className="container mx-auto p-4">
-      <h1 className="text-3xl font-bold mb-6">Form Creator Dashboard</h1>
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold">Form Creator Dashboard</h1>
+        <div className="flex items-center space-x-2">
+          <Button variant="outline" size="icon" >
+            {'dark' === 'light' ? <Moon className="h-[1.2rem] w-[1.2rem]" /> : <Sun className="h-[1.2rem] w-[1.2rem]" />}
+          </Button>
+          <Button variant="outline" size="icon" onClick={handleLogout}>
+            <LogOut className="h-[1.2rem] w-[1.2rem]" />
+          </Button>
+        </div>
+      </div>
 
       <div className="mb-8 flex">
         <Link className="ml-auto w-full sm:w-auto" to={`/create-form`}>
-          <Button className="bg-blue-700">
+          <Button className="bg-blue-700 dark:bg-blue-600">
             <PlusCircle className="mr-2 h-4 w-4" /> Create New Form
           </Button>
         </Link>
@@ -84,7 +104,7 @@ const Dashboard = () => {
         <h2 className="text-2xl font-semibold mb-4">Recent Forms</h2>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {recentForms?.map((form) => (
-            <Card key={form._id}>
+            <Card key={form._id} className="dark:bg-gray-800">
               <CardHeader>
                 <div className="flex justify-between items-center">
                   <CardTitle>{form.title}</CardTitle>
@@ -93,12 +113,12 @@ const Dashboard = () => {
                     onDelete={() => deleteForm(form._id)}
                   />
                 </div>
-                <CardDescription>
+                <CardDescription className="dark:text-gray-300">
                   Last edited: {new Date(form.createdAt).toLocaleDateString()}
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm text-muted-foreground dark:text-gray-400">
                   Questions: {form?.questions?.length}
                 </p>
               </CardContent>

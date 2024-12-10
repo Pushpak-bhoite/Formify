@@ -32,11 +32,11 @@ export default function ShowFormResponses() {
 
     // Group responses by version
     const groupedByVersion = data.reduce((acc, item) => {
-        if (!acc[item.version]) {
+        if (!acc[item.version]) { // 
             acc[item.version] = [];
         }
-        console.log('acc-->', item.version)
-        acc[item.version].push(item);
+        console.log('acc-->', acc)
+        acc[item.version].push(item); // simple it check the index or in or case version of array and pushes it to that field 
         return acc;
     }, {});
 

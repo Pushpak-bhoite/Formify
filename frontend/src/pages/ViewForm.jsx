@@ -175,7 +175,7 @@ export default function ViewForm() {
         return (
           <Input
             type="file"
-            onChange={(e) => handleAnswer(index, e.target.files[0])}
+            onChange={(e) => handleAnswer(index, e.target.files[0]?.name)}
           />
         );
 
@@ -210,14 +210,14 @@ export default function ViewForm() {
 
 
   return (
-    <div className='w-screen min-h-screen pt-5 bg-orange-100'>
-      <div className="container md:w-3/5 bg-orange-600 mx-auto p-4 rounded-md">
+    <div className='w-screen min-h-screen pt-5 bg-blue-50'>
+      <div className="container md:w-3/5 mx-auto p-4 rounded-md">
 
         <h1 className="text-4xl font-bold mb-4 text-center"  >{formTitle}</h1>
         <p className='text-muted underline text-center'>{questions.length > 0 && formData?.description}</p>
 
         <div className="mt-6">
-          <h2 className="text-xl font-semibold mb-2 text-white">{questions.length > 0 && 'Questions'} </h2>
+          <h2 className="text-xl font-semibold mb-2 ">{questions.length > 0 && 'Questions'} </h2>
           {questions.map((question, index) => (
             <Card key={index} className="mb-4 py-4">
               <CardContent className="space-y-4">

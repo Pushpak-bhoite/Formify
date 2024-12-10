@@ -109,11 +109,13 @@ export default function SignupForm() {
               />
             </div>
           </CardContent>
-          <CardFooter>
+          <CardFooter className="flex flex-col space-y-4">
             <Button type="submit" className="w-full">Sign Up</Button>
+            <div className="text-sm text-center">
+              Already have an account? <Link to="/sign-in" className="text-blue-600 hover:underline">Sign In</Link>
+            </div>
           </CardFooter>
         </form>
-        <div><Link to={'/sign-in'}>Sign In</Link></div>
       </Card>
     </div>
   )
