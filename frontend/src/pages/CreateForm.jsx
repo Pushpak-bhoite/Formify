@@ -1,5 +1,6 @@
-
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
+import { DndProvider, useDrag, useDrop } from "react-dnd"
+import { HTML5Backend } from "react-dnd-html5-backend"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -11,7 +12,7 @@ import { Label } from "@/components/ui/label"
 import { useToast } from "@/hooks/use-toast"
 import axios from 'axios'
 import { Switch } from '@/components/ui/switch'
-import { Copy, Tally1, Trash2, X } from 'lucide-react'
+import { Copy, GripVertical, Tally1, Trash2, X } from 'lucide-react'
 import { validateForm } from '@/utils/ValidateCreateForm'
 
 const questionTypes = [
@@ -24,25 +25,101 @@ const questionTypes = [
   { value: 'date', label: 'Date' },
 ]
 
+const QuestionCard = ({ question, index, moveQuestion, updateQuestion, deleteQuestion, renderQuestionOptions }) => {
+  const [{ isDragging }, drag] = useDrag({
+    type: 'QUESTION',
+    item: { index },
+    collect: (monitor) => ({
+      isDragging: monitor.isDragging(),
+    }),
+  })
+
+  const [, drop] = useDrop({
+    accept: 'QUESTION',
+    hover(item, monitor) {
+      if (!drag) {
+        return
+      }
+      const dragIndex = item.index
+      const hoverIndex = index
+      if (dragIndex === hoverIndex) {
+        return
+      }
+      moveQuestion(dragIndex, hoverIndex)
+      item.index = hoverIndex
+    },
+  })
+
+  return (
+    <Card
+      ref={(node) => drag(drop(node))}
+      className={`mb-4 py-4 ${isDragging ? 'opacity-50' : ''}`}
+    >
+      <CardContent className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="cursor-move">
+            <GripVertical size={24} />
+          </div>
+          <Select
+            value={question.type}
+            onValueChange={(value) => updateQuestion(index, 'type', value)}
+          >
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Select question type" />
+            </SelectTrigger>
+            <SelectContent>
+              {questionTypes.map((type) => (
+                <SelectItem key={type.value} value={type.value}>
+                  {type.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <Input
+          placeholder="Question"
+          value={question.question}
+          onChange={(e) => updateQuestion(index, 'question', e.target.value)}
+        />
+        {renderQuestionOptions(question, index)}
+
+        <div className='flex flex-row-reverse items-center gap-4'>
+          <div className='flex items-center justify-center gap-3'>
+            <span>Required</span>
+            <Switch
+              checked={question.required}
+              onCheckedChange={(checked) => updateQuestion(index, 'required', checked)}
+            />
+          </div>
+          <Tally1 size={24} />
+          <Button variant="ghost" size="icon" onClick={() => deleteQuestion(index)}>
+            <Trash2 className="h-4 w-4 text-red-500" />
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
 export default function FormCreator() {
-  const { toast } = useToast() // Toast hook
+  const { toast } = useToast()
   const [formTitle, setFormTitle] = useState('')
   const [formDescription, setFormDescription] = useState('')
   const [questions, setQuestions] = useState([])
   const [formLink, setFormLink] = useState('')
+
   const addQuestion = () => {
     setQuestions([...questions, { type: 'text', question: '', options: [], required: false }])
   }
 
   const updateQuestion = (index, field, value) => {
     const updatedQuestions = [...questions]
-    updatedQuestions[index][field] = value;
+    updatedQuestions[index][field] = value
     setQuestions(updatedQuestions)
   }
 
   const deleteQuestion = (index) => {
-    console.log('index', index)
-    const updatedQuestions = [...questions] // to avoid direct updation fron state, took data to another variable  
+    const updatedQuestions = [...questions]
     updatedQuestions.splice(index, 1)
     setQuestions(updatedQuestions)
   }
@@ -66,28 +143,34 @@ export default function FormCreator() {
     setQuestions(updatedQuestions)
   }
 
+  const moveQuestion = useCallback((dragIndex, hoverIndex) => {
+    setQuestions((prevQuestions) => {
+      const updatedQuestions = [...prevQuestions]
+      const [reorderedItem] = updatedQuestions.splice(dragIndex, 1)
+      console.log('reorderedItem', reorderedItem)
+      updatedQuestions.splice(hoverIndex, 0, reorderedItem)
+      return updatedQuestions
+    })
+  }, [])
+
   const saveForm = async () => {
     if (!validateForm(formTitle, questions)) return
     try {
       const formData = { title: formTitle, description: formDescription, questions }
-      console.log('Submitting form data:', formData)
       formData.adminId = localStorage.getItem('userId')
-      // API call to save the form
       const response = await axios.post("http://localhost:3000/create-form", formData)
-      console.log('response', response?.data?.form?._id)
       setFormLink(`http://localhost:5173/forms/${response?.data?.form?._id}`)
       if (response.status === 201) {
         toast({
           title: "Form Created Successfully",
           description: "Your form has been saved.",
         })
-        // Reset form after successful save
         setFormTitle('')
         setFormDescription('')
         setQuestions([])
       }
     } catch (error) {
-      console.log('Error saving form:', error)
+      console.error('Error saving form:', error)
       toast({
         title: "Error",
         description: "There was a problem saving your form.",
@@ -112,13 +195,11 @@ export default function FormCreator() {
     }
   }
 
-  console.log('questions ->', questions)
-
   const renderQuestionOptions = (question, index) => {
     switch (question.type) {
       case 'text':
         return <Input disabled placeholder="Text answer" />
-      case 'multipleChoice': // Combine handling for 'radio' and 'multipleChoice'
+      case 'multipleChoice':
       case 'checkbox':
         return (
           <div className="space-y-2">
@@ -139,7 +220,9 @@ export default function FormCreator() {
                   onChange={(e) => updateOption(index, optionIndex, e.target.value)}
                   placeholder={`Option ${optionIndex + 1}`}
                 />
-                <X onClick={() => removeOption(index, optionIndex)} />
+                <Button variant="ghost" size="icon" onClick={() => removeOption(index, optionIndex)}>
+                  <X className="h-4 w-4" />
+                </Button>
               </div>
             ))}
             <Button onClick={() => addOption(index)}>Add Option</Button>
@@ -157,8 +240,9 @@ export default function FormCreator() {
                     onChange={(e) => updateOption(index, optionIndex, e.target.value)}
                     placeholder={`Option ${optionIndex + 1}`}
                   />
-                  <X onClick={() => removeOption(index, optionIndex)} />
-
+                  <Button variant="ghost" size="icon" onClick={() => removeOption(index, optionIndex)}>
+                    <X className="h-4 w-4" />
+                  </Button>
                 </div>
               ))}
             </RadioGroup>
@@ -183,16 +267,16 @@ export default function FormCreator() {
               </SelectContent>
             </Select>
             {question.options.map((option, optionIndex) => (
-              <div className='flex items-center gap-2'>
+              <div key={optionIndex} className='flex items-center gap-2'>
                 <Input
-                  key={optionIndex}
                   value={option}
                   onChange={(e) => updateOption(index, optionIndex, e.target.value)}
                   placeholder={`Option ${optionIndex + 1}`}
                 />
-                <X onClick={() => removeOption(index, optionIndex)} />
+                <Button variant="ghost" size="icon" onClick={() => removeOption(index, optionIndex)}>
+                  <X className="h-4 w-4" />
+                </Button>
               </div>
-
             ))}
             <Button onClick={() => addOption(index)}>Add Option</Button>
           </div>
@@ -205,88 +289,59 @@ export default function FormCreator() {
   }
 
   return (
-    <div className='w-screen min-h-screen pt-5 bg-blue-50'>
-      <div className='flex md:w-3/5 mx-auto mb-3 space-x-2 mb-4"'>
-        <Input value={formLink} readOnly placeholder="Generated URL will appear here" />
-        <Button onClick={() => copyToClipboard()} disabled={!formLink}>
-          <Copy className="mr-2 h-4 w-4" />
-          Copy
-        </Button>
-      </div>
-      {/* Change form color  */}
-      <div className="container md:w-3/5 bg--500 mx-auto p-4 rounded-md">
-        <h1 className="text-2xl font-bold mb-4 ">Create a New Form</h1>
-        <Card>
-          <CardHeader>
-            <CardTitle>Form Details</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <Input
-                placeholder="Form Title"
-                value={formTitle}
-                onChange={(e) => setFormTitle(e.target.value)}
-              />
-              <Textarea
-                placeholder="Form Description"
-                value={formDescription}
-                onChange={(e) => setFormDescription(e.target.value)}
-              />
-            </div>
-          </CardContent>
-        </Card>
-
-        <div className="mt-6">
-          <h2 className="text-xl font-semibold mb-2">Questions </h2>
-          {questions.map((question, index) => (
-            <Card key={index} className="mb-4 py-4">
-              <CardContent className="space-y-4">
-                {/* select question type */}
-                <Select
-                  value={question.type}
-                  onValueChange={(value) => updateQuestion(index, 'type', value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select question type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {questionTypes.map((type) => (
-                      <SelectItem key={type.value} value={type.value}>
-                        {type.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Input
-                  placeholder="Question"
-                  value={question.question}
-                  onChange={(e) => updateQuestion(index, 'question', e.target.value)}
-                />
-                {renderQuestionOptions(question, index)}
-
-                <div className='flex flex-row-reverse items-center  gap-4 '>
-                  <div className='flex items-center justify-center gap-3'>
-                    <span>Required </span>
-                    <Switch
-                      checked={question.required}
-                      onCheckedChange={(e) => updateQuestion(index, 'required', e)}
-                    />
-                  </div>
-                  <Tally1 size={30} />
-                  {/* <Tally1 size={} /> */}
-                  <Trash2 color='red' onClick={() => deleteQuestion(index)} />
-                </div>
-
-              </CardContent>
-            </Card>
-          ))}
-          <Button onClick={addQuestion}>Add Question</Button>
+    <DndProvider backend={HTML5Backend}>
+      <div className='w-full min-h-screen pt-5 bg-gray-50 dark:bg-gray-900'>
+        <div className='flex max-w-3xl mx-auto mb-4 space-x-2'>
+          <Input value={formLink} readOnly placeholder="Generated URL will appear here" />
+          <Button onClick={copyToClipboard} disabled={!formLink}>
+            <Copy className="mr-2 h-4 w-4" />
+            Copy
+          </Button>
         </div>
+        <div className="container max-w-3xl mx-auto p-4 rounded-md">
+          <h1 className="text-2xl font-bold mb-4 text-gray-800 dark:text-gray-200">Create a New Form</h1>
+          <Card>
+            <CardHeader>
+              <CardTitle>Form Details</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <Input
+                  placeholder="Form Title"
+                  value={formTitle}
+                  onChange={(e) => setFormTitle(e.target.value)}
+                />
+                <Textarea
+                  placeholder="Form Description"
+                  value={formDescription}
+                  onChange={(e) => setFormDescription(e.target.value)}
+                />
+              </div>
+            </CardContent>
+          </Card>
 
-        <CardFooter className="mt-6">
-          <Button onClick={saveForm} className="w-full">Save Form</Button>
-        </CardFooter>
+          <div className="mt-6">
+            <h2 className="text-xl font-semibold mb-2 text-gray-800 dark:text-gray-200">Questions</h2>
+            {questions.map((question, index) => (
+              <QuestionCard
+                key={index}
+                question={question}
+                index={index}
+                moveQuestion={moveQuestion}
+                updateQuestion={updateQuestion}
+                deleteQuestion={deleteQuestion}
+                renderQuestionOptions={renderQuestionOptions}
+              />
+            ))}
+            <Button onClick={addQuestion} className="mt-4">Add Question</Button>
+          </div>
+
+          <CardFooter className="mt-6">
+            <Button onClick={saveForm} className="w-full">Save Form</Button>
+          </CardFooter>
+        </div>
       </div>
-    </div>
+    </DndProvider>
   )
 }
+

@@ -11,6 +11,7 @@ import Dashboard from './pages/Dashboard'
 import NotFound from './pages/NotFound'
 import EditForm from './pages/EditForm'
 import { ThemeProvider } from './components/ThemeProvider'
+import DragDropProcice from './pages/DragDropProcice'
 
 function App() {
 
@@ -29,6 +30,7 @@ function App() {
             <Route path="/user-forms/:userId" element={<Dashboard />} />
             <Route path="/form-responses/:formId" element={<ShowFormResponses />} />
             <Route path="*" element={<NotFound />} />
+            <Route path="dnd" element={<DragDropProcice />} />
           </Routes>
         </div>
       </BrowserRouter>

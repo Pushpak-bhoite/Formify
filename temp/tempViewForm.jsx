@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react'
+
+import { useState, useEffect } from 'react'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -9,231 +10,330 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
 import { useToast } from "@/hooks/use-toast"
 import axios from 'axios'
+import { Switch } from '@/components/ui/switch'
+import { Copy, Tally1, Trash2, X } from 'lucide-react'
 import { useParams } from 'react-router-dom'
-import { validateForm } from '@/utils/ValidateViewForm'
 
-export default function ViewForm() {
-  const { toast } = useToast() // Toast hook
-  const [questions, setQuestions] = useState([]) // for upadation answers
-  const [formData, setFormData] = useState('') // to show form only 
-  const [formTitle, setFormTitle] = useState('') // 
-  const param = useParams();
+const questionTypes = [
+    { value: 'text', label: 'Text' },
+    { value: 'checkbox', label: 'Checkbox' },
+    { value: 'multipleChoice', label: 'Multiple Choice' },
+    { value: 'radio', label: 'Radio Button' },
+    { value: 'fileUpload', label: 'File Upload' },
+    { value: 'dropdown', label: 'Dropdown' },
+    { value: 'date', label: 'Date' },
+]
 
-  useEffect(() => {
-    async function getFormData() {
-      try {
-        const response = await axios.get(`http://localhost:3000/forms/${param?.formId}`);
-        setFormData(response?.data?.form);
-        setFormTitle(response?.data?.form?.title)
-
-        const initializedQuestions = response?.data?.form.questions.map((question) => {
-          let initialAnswer;
-          switch (question.type) {
-            case 'multiple':
-            case 'checkbox':
-              initialAnswer = []; // Multiple selections
-              break;
-            case 'radio':
-            case 'dropdown':
-              initialAnswer = null; // Single selection
-              break;
-            case 'fileUpload':
-              initialAnswer = null; // Placeholder for file object
-              break;
-            default:
-              initialAnswer = ''; // Text-based input
-          }
-          return { ...question, answer: initialAnswer };
-        });
-
-        setQuestions(initializedQuestions);
-        console.log('response', response);
-      } catch (error) {
-        console.error('Error fetching form data:', error);
-      }
-    }
-    getFormData();
-  }, [param]);
-
-  const handleAnswer = (index, value) => {
-    const updatedQuestions = [...questions];
-    updatedQuestions[index]['answer'] = value;
-    setQuestions(updatedQuestions);
-  };
-
-  const handleCheckboxChange = (index, option) => {
-    const updatedQuestions = [...questions];
-    const currentAnswers = updatedQuestions[index]['answer'];
-
-    if (currentAnswers.includes(option)) {
-      // Remove option if already selected
-      updatedQuestions[index]['answer'] = currentAnswers.filter((item) => item !== option);
-    } else {
-      // Add option if not selected
-      updatedQuestions[index]['answer'] = [...currentAnswers, option];
-    }
-    setQuestions(updatedQuestions);
-  };
-
-
-  const saveForm = async () => {
-    if (!validateForm(questions)) return; // Stop submission if validation fails
-    try {
-      const ansArr = questions.map((item) => {
-        return { question: item.question, answer: item.answer}
-      })
-      const payload = { formId: formData._id, answers: ansArr, version: formData?.version};
-      console.log('Submitting form data:', ansArr);
-
-      const response = await axios.post("http://localhost:3000/form-response", payload, {
-        // formData, headers: {
-        //     'Content-type': "multipart/form-data"
-        // }
-      });
-      console.log('response', response?.data?.form?._id);
-      if (response.status === 201) {
+const validateForm = (formTitle, questions) => {
+    if (!formTitle.trim()) {
         toast({
-          title: "Form Submited Successfully",
-          description: "Your form has been saved.",
-        });
-
-        // Reset form after successful save
-        setFormTitle('Your responce has been saved ');
-        setQuestions([]);
-      }
-    } catch (error) {
-      console.error('Error saving form:', error);
-      toast({
-        title: "Error",
-        description: "There was a problem saving your form.",
-        variant: "destructive",
-      });
+            title: "Validation Error",
+            description: "Form title cannot be empty.",
+            variant: "destructive",
+        })
+        return false
     }
-  };
 
-  console.log('questions ->', questions)
+    for (let i = 0; i < questions.length; i++) {
+        const question = questions[i]
 
-  const renderQuestionOptions = (question, index) => {
-    switch (question.type) {
-      case 'text':
-        return (
-          <Input
-            placeholder="Text answer"
-            value={question.answer}
-            onChange={(e) => handleAnswer(index, e.target.value)}
-          />
-        );
+        if (!question.question.trim()) {
+            toast({
+                title: "Validation Error",
+                description: `Question ${i + 1} cannot be empty.`,
+                variant: "destructive",
+            })
+            return false
+        }
 
-      case 'checkbox':
-        return (
-          <div className="space-y-2">
-            {question.options.map((option, optionIndex) => (
-              <div key={optionIndex} className="flex items-center space-x-2">
-                <Checkbox
-                  id={`q${index}-option-${optionIndex}`}
-                  checked={question.answer.includes(option)}
-                  onCheckedChange={() => handleCheckboxChange(index, option)}
-                />
-                <Label htmlFor={`q${index}-option-${optionIndex}`}>{option}</Label>
-              </div>
-            ))}
-          </div>
-        );
-
-      case 'multipleChoice':
-        return (
-          <div className="space-y-2">
-            {question.options.map((option, optionIndex) => (
-              <div key={optionIndex} className="flex items-center space-x-2">
-                <Checkbox
-                  id={`q${index}-option-${optionIndex}`}
-                  checked={question.answer.includes(option)}
-                  onCheckedChange={() => handleCheckboxChange(index, option)}
-                />
-                <Label htmlFor={`q${index}-option-${optionIndex}`}>{option}</Label>
-              </div>
-            ))}
-          </div>
-        );
-
-      case 'radio':
-        return (
-          <RadioGroup
-            value={question.answer}
-            onValueChange={(value) => handleAnswer(index, value)}
-          >
-            {question.options.map((option, optionIndex) => (
-              <div key={optionIndex} className="flex items-center space-x-2">
-                <RadioGroupItem value={option} id={`q${index}-option-${optionIndex}`} />
-                <Label htmlFor={`q${index}-option-${optionIndex}`}>{option}</Label>
-              </div>
-            ))}
-          </RadioGroup>
-        );
-
-      case 'fileUpload':
-        return (
-          <Input
-            type="file"
-            onChange={(e) => handleAnswer(index, e.target.files[0])}
-          />
-        );
-
-      case 'dropdown':
-        return (
-          <div className="space-y-2">
-            <Select
-              value={question.answer}
-              onValueChange={(value) => handleAnswer(index, value)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select an option" />
-              </SelectTrigger>
-              <SelectContent>
-                {question.options.map((option, optionIndex) => (
-                  <SelectItem key={optionIndex} value={option}>
-                    {option}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-          </div>
-        );
-
-      case 'date':
-        return <Input type="date" onChange={(e) => handleAnswer(index, e.target.value)} />
-      default:
-        return null;
+        if (
+            ['multipleChoice', 'checkbox', 'dropdown', 'radio'].includes(question.type) &&
+            (question.options.length === 0 || question.options.some(option => !option.trim()))
+        ) {
+            toast({
+                title: "Validation Error",
+                description: `Question ${i + 1} has empty or no options.`,
+                variant: "destructive",
+            })
+            return false
+        }
     }
-  };
 
-
-  return (
-    <div className='w-screen min-h-screen pt-5 bg-orange-100'>
-      <div className="container md:w-3/5 bg-orange-600 mx-auto p-4 rounded-md">
-
-        <h1 className="text-4xl font-bold mb-4 text-center"  >{formTitle}</h1>
-        <p className='text-muted underline text-center'>{questions.length > 0 && formData?.description}</p>
-
-        <div className="mt-6">
-          <h2 className="text-xl font-semibold mb-2 text-white">{questions.length > 0 && 'Questions'} </h2>
-          {questions.map((question, index) => (
-            <Card key={index} className="mb-4 py-4">
-              <CardContent className="space-y-4">
-                {/* select question type */}
-                <p>{question?.question} <span className='text-red-600'> {question.required ? '*' : ""}</span> </p>
-                {renderQuestionOptions(question, index)}
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-        {
-          questions.length > 0 &&
-          <CardFooter className="mt-6">
-            <Button onClick={saveForm} type='button' className="w-full">Save Form</Button>
-          </CardFooter>}
-      </div>
-    </div>
-  )
+    return true
 }
+
+export default function EditForm() {
+
+    const { formId } = useParams()
+    console.log('formId', formId)
+    const { toast } = useToast()
+    const [formTitle, setFormTitle] = useState('')
+    const [formDescription, setFormDescription] = useState('')
+    const [questions, setQuestions] = useState([])
+    const [formLink, setFormLink] = useState('')
+
+    useEffect(() => {
+        const fetchFormData = async () => {
+            try {
+                const response = await axios.get(`http://localhost:3000/forms/${formId}`)
+                console.log('response', response)
+                const { title, description, questions } = response.data.form
+                setFormTitle(title)
+                setFormDescription(description)
+                setQuestions(questions)
+                setFormLink(`http://localhost:5173/forms/${formId}`)
+            } catch (error) {
+                console.log('Error fetching form data:', error)
+                toast({
+                    title: "Error",
+                    description: "Failed to load form data.",
+                    variant: "destructive",
+                })
+            }
+        }
+        fetchFormData()
+    }, [formId, toast])
+
+    const addQuestion = () => {
+        setQuestions([...questions, { type: 'text', question: '', options: [], required: false }])
+    }
+
+    const updateQuestion = (index, field, value) => {
+        const updatedQuestions = [...questions]
+        updatedQuestions[index][field] = value
+        setQuestions(updatedQuestions)
+    }
+
+    const deleteQuestion = (index) => {
+        const updatedQuestions = [...questions]
+        updatedQuestions.splice(index, 1)
+        setQuestions(updatedQuestions)
+    }
+
+    const addOption = (questionIndex) => {
+        const updatedQuestions = [...questions]
+        const newOptionIndex = updatedQuestions[questionIndex].options.length
+        updatedQuestions[questionIndex].options.push(`Option ${newOptionIndex + 1}`)
+        setQuestions(updatedQuestions)
+    }
+
+    const removeOption = (questionIndex, optionIndex) => {
+        const updatedQuestions = [...questions]
+        updatedQuestions[questionIndex].options.splice(optionIndex, 1)
+        setQuestions(updatedQuestions)
+    }
+
+    const updateOption = (questionIndex, optionIndex, value) => {
+        const updatedQuestions = [...questions]
+        updatedQuestions[questionIndex].options[optionIndex] = value
+        setQuestions(updatedQuestions)
+    }
+
+    const saveForm = async () => {
+        if (!validateForm(formTitle, questions)) return
+        try {
+            const formData = { title: formTitle, description: formDescription, questions }
+            console.log('Updating form data:', formData)
+            const response = await axios.put(`http://localhost:3000/forms/${formId}`, formData)
+            if (response.status === 200) {
+                toast({
+                    title: "Form Updated Successfully",
+                    description: "Your form has been saved.",
+                })
+            }
+        } catch (error) {
+            console.error('Error updating form:', error)
+            toast({
+                title: "Error",
+                description: "There was a problem saving your form.",
+                variant: "destructive",
+            })
+        }
+    }
+
+    const copyToClipboard = async () => {
+        try {
+            await navigator.clipboard.writeText(formLink)
+            toast({
+                title: "Copied!",
+                description: "URL has been copied to clipboard.",
+            })
+        } catch (err) {
+            toast({
+                title: "Failed to copy",
+                description: "Something went wrong while copying the URL.",
+                variant: "destructive",
+            })
+        }
+    }
+
+    const renderQuestionOptions = (question, index) => {
+        switch (question.type) {
+            case 'text':
+                return <Input disabled placeholder="Text answer" />
+            case 'multipleChoice':
+            case 'checkbox':
+                return (
+                    <div className="space-y-2">
+                        {question.options.map((option, optionIndex) => (
+                            <div key={optionIndex} className="flex items-center space-x-2">
+                                {question.type === 'multipleChoice' ? (
+                                    <RadioGroup>
+                                        <div className="flex items-center space-x-2">
+                                            <RadioGroupItem value={option} id={`q${index}-option-${optionIndex}`} disabled />
+                                            <Label className='text-nowrap' htmlFor={`q${index}-option-${optionIndex}`}>{option || `Option ${optionIndex + 1}`}</Label>
+                                        </div>
+                                    </RadioGroup>
+                                ) : (
+                                    <Checkbox id={`q${index}-option-${optionIndex}`} disabled />
+                                )}
+                                <Input
+                                    value={option}
+                                    onChange={(e) => updateOption(index, optionIndex, e.target.value)}
+                                    placeholder={`Option ${optionIndex + 1}`}
+                                />
+                                <X onClick={() => removeOption(index, optionIndex)} />
+                            </div>
+                        ))}
+                        <Button onClick={() => addOption(index)}>Add Option</Button>
+                    </div>
+                )
+            case 'radio':
+                return (
+                    <div className="space-y-2">
+                        <RadioGroup>
+                            {question.options.map((option, optionIndex) => (
+                                <div key={optionIndex} className="flex items-center space-x-2">
+                                    <RadioGroupItem value={option} id={`q${index}-option-${optionIndex}`} disabled />
+                                    <Input
+                                        value={option}
+                                        onChange={(e) => updateOption(index, optionIndex, e.target.value)}
+                                        placeholder={`Option ${optionIndex + 1}`}
+                                    />
+                                    <X onClick={() => removeOption(index, optionIndex)} />
+                                </div>
+                            ))}
+                        </RadioGroup>
+                        <Button onClick={() => addOption(index)}>Add Option</Button>
+                    </div>
+                )
+            case 'fileUpload':
+                return <Input type="file" disabled />
+            case 'dropdown':
+                return (
+                    <div className="space-y-2">
+                        <Select disabled>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Select an option" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {question.options.map((option, optionIndex) => (
+                                    <SelectItem key={optionIndex} value={option || `option-${optionIndex + 1}`}>
+                                        {option || `Option ${optionIndex + 1}`}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                        {question.options.map((option, optionIndex) => (
+                            <div key={optionIndex} className='flex items-center gap-2'>
+                                <Input
+                                    value={option}
+                                    onChange={(e) => updateOption(index, optionIndex, e.target.value)}
+                                    placeholder={`Option ${optionIndex + 1}`}
+                                />
+                                <X onClick={() => removeOption(index, optionIndex)} />
+                            </div>
+                        ))}
+                        <Button onClick={() => addOption(index)}>Add Option</Button>
+                    </div>
+                )
+            case 'date':
+                return <Input type="date" disabled />
+            default:
+                return null
+        }
+    }
+
+    return (
+        <div className='w-screen min-h-screen pt-5 bg-blue-50'>
+            <div className='flex md:w-3/5 mx-auto mb-3 space-x-2 mb-4'>
+                <Input value={formLink} readOnly placeholder="Generated URL will appear here" />
+                <Button onClick={copyToClipboard} disabled={!formLink}>
+                    <Copy className="mr-2 h-4 w-4" />
+                    Copy
+                </Button>
+            </div>
+            <div className="container md:w-3/5 mx-auto p-4 rounded-md">
+                <h1 className="text-2xl font-bold mb-4">Edit Form</h1>
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Form Details</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="space-y-4">
+                            <Input
+                                placeholder="Form Title"
+                                value={formTitle}
+                                onChange={(e) => setFormTitle(e.target.value)}
+                            />
+                            <Textarea
+                                placeholder="Form Description"
+                                value={formDescription}
+                                onChange={(e) => setFormDescription(e.target.value)}
+                            />
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <div className="mt-6">
+                    <h2 className="text-xl font-semibold mb-2">Questions</h2>
+                    {questions.map((question, index) => (
+                        <Card key={index} className="mb-4 py-4">
+                            <CardContent className="space-y-4">
+                                <Select
+                                    value={question.type}
+                                    onValueChange={(value) => updateQuestion(index, 'type', value)}
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select question type" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {questionTypes.map((type) => (
+                                            <SelectItem key={type.value} value={type.value}>
+                                                {type.label}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                                <Input
+                                    placeholder="Question"
+                                    value={question.question}
+                                    onChange={(e) => updateQuestion(index, 'question', e.target.value)}
+                                />
+                                {renderQuestionOptions(question, index)}
+
+                                <div className='flex flex-row-reverse items-center gap-4'>
+                                    <div className='flex items-center justify-center gap-3'>
+                                        <span>Required </span>
+                                        <Switch
+                                            checked={question.required}
+                                            onCheckedChange={(e) => updateQuestion(index, 'required', e)}
+                                        />
+                                    </div>
+                                    <Tally1 size={30} />
+                                    <Trash2 color='red' onClick={() => deleteQuestion(index)} />
+                                </div>
+                            </CardContent>
+                        </Card>
+                    ))}
+                    <Button onClick={addQuestion}>Add Question</Button>
+                </div>
+
+                <CardFooter className="mt-6">
+                    <Button onClick={saveForm} className="w-full">Save Form</Button>
+                </CardFooter>
+            </div>
+        </div>
+    )
+}
+

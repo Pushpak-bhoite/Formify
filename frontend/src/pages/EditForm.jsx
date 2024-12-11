@@ -1,5 +1,10 @@
-
-import { useState, useEffect } from 'react'
+// setQuestions((prevQuestions) => {
+//     const updatedQuestions = [...prevQuestions]
+//     const [reorderedItem] = updatedQuestions.splice(dragIndex, 1)
+//     updatedQuestions.splice(hoverIndex, 0, reorderedItem)
+//     return updatedQuestions
+// })
+import { useState, useEffect, useCallback } from 'react'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -13,16 +18,10 @@ import axios from 'axios'
 import { Switch } from '@/components/ui/switch'
 import { Copy, Tally1, Trash2, X } from 'lucide-react'
 import { useParams } from 'react-router-dom'
+import EditQuestionCard from '@/components/EditQuestionCard'
+import { DndProvider } from 'react-dnd'
+import { HTML5Backend } from 'react-dnd-html5-backend'
 
-const questionTypes = [
-    { value: 'text', label: 'Text' },
-    { value: 'checkbox', label: 'Checkbox' },
-    { value: 'multipleChoice', label: 'Multiple Choice' },
-    { value: 'radio', label: 'Radio Button' },
-    { value: 'fileUpload', label: 'File Upload' },
-    { value: 'dropdown', label: 'Dropdown' },
-    { value: 'date', label: 'Date' },
-]
 
 const validateForm = (formTitle, questions) => {
     if (!formTitle.trim()) {
@@ -129,6 +128,26 @@ export default function EditForm() {
         setQuestions(updatedQuestions)
     }
 
+    console.log( questions[0])
+    const moveQuestion = useCallback((dragIndex, hoverIndex) => {
+        console.log('dragIndex', dragIndex)
+        console.log('hoverIndex', hoverIndex)
+        // const allQuestions = [...questions];
+        // console.log('allQuestions', allQuestions)
+        // const getDraggedQuestion = allQuestions[dragIndex]
+        // console.log('getDraggedQuestion', getDraggedQuestion)
+        // allQuestions.splice(hoverIndex, 1, getDraggedQuestion)
+        setQuestions((prev)=>{
+            const getDragged = prev[dragIndex];
+            let NewArr = [...prev]
+            NewArr.splice(dragIndex, 1)
+            NewArr.splice(hoverIndex, 0, getDragged)
+            console.log(NewArr)
+            return NewArr
+        })
+
+    }, [])
+
     const saveForm = async () => {
         if (!validateForm(formTitle, questions)) return
         try {
@@ -168,7 +187,7 @@ export default function EditForm() {
     }
 
     const renderQuestionOptions = (question, index) => {
-        switch (question.type) {
+        switch (question?.type) {
             case 'text':
                 return <Input disabled placeholder="Text answer" />
             case 'multipleChoice':
@@ -255,85 +274,62 @@ export default function EditForm() {
     }
 
     return (
-        <div className='w-screen min-h-screen pt-5 bg-blue-50'>
-            <div className='flex md:w-3/5 mx-auto mb-3 space-x-2 mb-4'>
-                <Input value={formLink} readOnly placeholder="Generated URL will appear here" />
-                <Button onClick={copyToClipboard} disabled={!formLink}>
-                    <Copy className="mr-2 h-4 w-4" />
-                    Copy
-                </Button>
-            </div>
-            <div className="container md:w-3/5 mx-auto p-4 rounded-md">
-                <h1 className="text-2xl font-bold mb-4">Edit Form</h1>
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Form Details</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="space-y-4">
-                            <Input
-                                placeholder="Form Title"
-                                value={formTitle}
-                                onChange={(e) => setFormTitle(e.target.value)}
-                            />
-                            <Textarea
-                                placeholder="Form Description"
-                                value={formDescription}
-                                onChange={(e) => setFormDescription(e.target.value)}
-                            />
-                        </div>
-                    </CardContent>
-                </Card>
+        <DndProvider backend={HTML5Backend}>
 
-                <div className="mt-6">
-                    <h2 className="text-xl font-semibold mb-2">Questions</h2>
-                    {questions.map((question, index) => (
-                        <Card key={index} className="mb-4 py-4">
-                            <CardContent className="space-y-4">
-                                <Select
-                                    value={question.type}
-                                    onValueChange={(value) => updateQuestion(index, 'type', value)}
-                                >
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Select question type" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {questionTypes.map((type) => (
-                                            <SelectItem key={type.value} value={type.value}>
-                                                {type.label}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                                <Input
-                                    placeholder="Question"
-                                    value={question.question}
-                                    onChange={(e) => updateQuestion(index, 'question', e.target.value)}
-                                />
-                                {renderQuestionOptions(question, index)}
-
-                                <div className='flex flex-row-reverse items-center gap-4'>
-                                    <div className='flex items-center justify-center gap-3'>
-                                        <span>Required </span>
-                                        <Switch
-                                            checked={question.required}
-                                            onCheckedChange={(e) => updateQuestion(index, 'required', e)}
-                                        />
-                                    </div>
-                                    <Tally1 size={30} />
-                                    <Trash2 color='red' onClick={() => deleteQuestion(index)} />
-                                </div>
-                            </CardContent>
-                        </Card>
-                    ))}
-                    <Button onClick={addQuestion}>Add Question</Button>
+            <div className='w-screen min-h-screen pt-5 bg-blue-50'>
+                <div className='flex md:w-3/5 mx-auto mb-3 space-x-2 mb-4'>
+                    <Input value={formLink} readOnly placeholder="Generated URL will appear here" />
+                    <Button onClick={copyToClipboard} disabled={!formLink}>
+                        <Copy className="mr-2 h-4 w-4" />
+                        Copy
+                    </Button>
                 </div>
+                <div className="container md:w-3/5 mx-auto p-4 rounded-md">
+                    <h1 className="text-2xl font-bold mb-4">Edit Form</h1>
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Form Details</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="space-y-4">
+                                <Input
+                                    placeholder="Form Title"
+                                    value={formTitle}
+                                    onChange={(e) => setFormTitle(e.target.value)}
+                                />
+                                <Textarea
+                                    placeholder="Form Description"
+                                    value={formDescription}
+                                    onChange={(e) => setFormDescription(e.target.value)}
+                                />
+                            </div>
+                        </CardContent>
+                    </Card>
 
-                <CardFooter className="mt-6">
-                    <Button onClick={saveForm} className="w-full">Save Form</Button>
-                </CardFooter>
+                    <div className="mt-6">
+                        <h2 className="text-xl font-semibold mb-2">Questions</h2>
+                        {questions.map((question, index) => (
+                            <EditQuestionCard
+                                key={index}
+                                index={index}
+                                question={question}
+                                setQuestions={setQuestions}
+                                updateQuestion={updateQuestion}
+                                moveQuestion={moveQuestion}
+                                deleteQuestion={deleteQuestion}
+                                renderQuestionOptions={renderQuestionOptions}
+                            />
+                        ))}
+                        <Button onClick={addQuestion}>Add Question</Button>
+                    </div>
+
+                    <CardFooter className="mt-6">
+                        <Button onClick={saveForm} className="w-full">Save Form</Button>
+                    </CardFooter>
+                </div>
             </div>
-        </div>
+
+        </DndProvider>
     )
 }
 
